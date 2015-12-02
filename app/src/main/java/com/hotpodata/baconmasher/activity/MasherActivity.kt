@@ -85,6 +85,7 @@ public class MasherActivity : AppCompatActivity() {
 
     var lastMash: MashData? = null
     var shareProgDialog: ProgressDialog? = null
+    var errorDialog: AlertDialog? = null
 
     protected override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -132,7 +133,7 @@ public class MasherActivity : AppCompatActivity() {
             } else {
                 hideSystemUI()
             }
-            immersiveMode = !immersiveMode
+
         }
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -144,19 +145,13 @@ public class MasherActivity : AppCompatActivity() {
 
         if (savedInstanceState != null && savedInstanceState.containsKey(STATE_LAST_MASH)) {
             try {
-                var mashData = MashData.Serializer.fromJSON(JSONObject(savedInstanceState.getString(STATE_LAST_MASH)))
-                if (mashData != null) {
-                    bindMash(mashData)
-                }
+                lastMash = MashData.Serializer.fromJSON(JSONObject(savedInstanceState.getString(STATE_LAST_MASH)))
             } catch(ex: Exception) {
                 Timber.e(ex, "Failure to parse out mash data from savedInstanceState")
             }
         }
 
-        if (lastMash == null) {
-            fab?.hide()
-            setMashHidden()
-        }
+
     }
 
     override fun onDestroy() {
@@ -169,10 +164,13 @@ public class MasherActivity : AppCompatActivity() {
 
     public override fun onResume() {
         super.onResume()
+        if (lastMash != null) {
+            bindMash(lastMash!!)
+        } else {
+            fab?.hide()
+            setMashHidden()
+        }
         resumed = true
-
-
-
         Timber.i("Setting screen name:" + AnalyticsMaster.SCREEN_MASHER);
         AnalyticsMaster.getTracker(this).setScreenName(AnalyticsMaster.SCREEN_MASHER);
         AnalyticsMaster.getTracker(this).send(HitBuilders.ScreenViewBuilder().build());
@@ -199,6 +197,21 @@ public class MasherActivity : AppCompatActivity() {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_masher, menu);
         return true;
+    }
+
+    public override fun onBackPressed() {
+        if (drawerLayout!!.isDrawerOpen(leftDrawer) || drawerLayout!!.isDrawerOpen(rightDrawer)) {
+            drawerLayout!!.closeDrawers()
+        } else if (immersiveMode) {
+            showSystemUI()
+        } else if (shareProgDialog != null && shareProgDialog!!.isShowing) {
+            shareProgDialog?.cancel()
+        } else if (errorDialog != null && errorDialog!!.isShowing) {
+            errorDialog?.cancel()
+        } else {
+            super.onBackPressed()
+        }
+
     }
 
 
@@ -288,6 +301,7 @@ public class MasherActivity : AppCompatActivity() {
                     override fun onError() {
                         stopLoadingAnimation()
                         showErrorDialog(getString(R.string.error_couldnt_load_image))
+                        lastMash = null
                     }
                 })
 
@@ -430,11 +444,13 @@ public class MasherActivity : AppCompatActivity() {
     private fun hideSystemUI() {
         supportActionBar.hide()
         fab?.hide()
+        immersiveMode = true
     }
 
     private fun showSystemUI() {
         supportActionBar.show()
         fab?.show()
+        immersiveMode = false
     }
 
     public fun setUpLeftDrawer() {
@@ -458,15 +474,16 @@ public class MasherActivity : AppCompatActivity() {
 
     fun showErrorDialog(msg: String) {
         if (resumed) {
-            with(AlertDialog.Builder(this)) {
+            errorDialog = with(AlertDialog.Builder(this)) {
                 setTitle(R.string.error)
                 setMessage(msg)
                 setNegativeButton(getString(R.string.ok)) { dialogInterface: DialogInterface?, i: Int ->
                     dialogInterface?.dismiss()
                 }
                 setCancelable(true)
-                create().show()
+                create()
             }
+            errorDialog?.show()
         }
     }
 
