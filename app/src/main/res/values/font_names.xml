@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="fonts">
+        <item>AmaticSC-Bold.ttf</item>
+        <item>AmaticSC-Regular.ttf</item>
+        <item>Anton.ttf</item>
+        <item>Bangers.ttf</item>
+        <item>Chewy.ttf</item>
+        <item>Cinzel-Black.ttf</item>
+        <item>Cinzel-Bold.ttf</item>
+        <item>Cinzel-Regular.ttf</item>
+        <item>ComingSoon.ttf</item>
+        <item>Courgette-Regular.ttf</item>
+        <item>CoveredByYourGrace.ttf</item>
+        <item>DancingScript-Bold.ttf</item>
+        <item>DancingScript-Regular.ttf</item>
+        <item>FredokaOne-Regular.ttf</item>
+        <item>GloriaHallelujah.ttf</item>
+        <item>Inconsolata-Bold.ttf</item>
+        <item>Inconsolata-Regular.ttf</item>
+        <item>IndieFlower.ttf</item>
+        <item>KaushanScript-Regular.ttf</item>
+        <item>Lobster-Regular.ttf</item>
+        <item>OpenSans-Bold.ttf</item>
+        <item>OpenSans-BoldItalic.ttf</item>
+        <item>OpenSans-ExtraBold.ttf</item>
+        <item>OpenSans-ExtraBoldItalic.ttf</item>
+        <item>OpenSans-Italic.ttf</item>
+        <item>OpenSans-Light.ttf</item>
+        <item>OpenSans-LightItalic.ttf</item>
+        <item>OpenSans-Regular.ttf</item>
+        <item>OpenSans-Semibold.ttf</item>
+        <item>OpenSans-SemiboldItalic.ttf</item>
+        <item>Orbitron-Black.ttf</item>
+        <item>Orbitron-Bold.ttf</item>
+        <item>Orbitron-Medium.ttf</item>
+        <item>Orbitron-Regular.ttf</item>
+        <item>Oswald-Bold.ttf</item>
+        <item>Oswald-Light.ttf</item>
+        <item>Oswald-Regular.ttf</item>
+        <item>Pacifico.ttf</item>
+        <item>PassionOne-Black.ttf</item>
+        <item>PassionOne-Bold.ttf</item>
+        <item>PassionOne-Regular.ttf</item>
+        <item>PermanentMarker.ttf</item>
+        <item>PT_Serif-Web-Bold.ttf</item>
+        <item>PT_Serif-Web-BoldItalic.ttf</item>
+        <item>PT_Serif-Web-Italic.ttf</item>
+        <item>PT_Serif-Web-Regular.ttf</item>
+        <item>Righteous-Regular.ttf</item>
+        <item>Satisfy-Regular.ttf</item>
+        <item>ShadowsIntoLight.ttf</item>
+        <item>SigmarOne.ttf</item>
+    </string-array>
+
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="imagereddits">
+        <item>Aww</item>
+        <item>EarthPorn</item>
+        <item>FoodPorn</item>
+        <item>HumanPorn</item>
+        <item>OldSchoolCool</item>
+        <item>RoomPorn</item>
+    </string-array>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="commentreddits">
+        <item>AskReddit</item>
+        <item>News</item>
+        <item>Pics</item>
+        <item>TIFU</item>
+        <item>WTF</item>
+    </string-array>
+</resources>

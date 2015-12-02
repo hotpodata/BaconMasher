@@ -1,0 +1,79 @@
+<resources>
+    <string name="app_name">BaconMasher</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="error">Error</string>
+    <string name="unknown_error">An unknown error occurred!</string>
+    <string name="error_couldnt_load_image">Failure to load image.</string>
+    <string name="error_needs_image_subreddit">You must have at least one image subreddit selected.</string>
+    <string name="error_needs_comment_subreddit">You must have at least one comment subreddit selected.</string>
+    <string name="error_needs_gravity">You must set at least one valid text alignment.</string>
+    <string name="error_needs_font">You must have at least one font selected.</string>
+
+    <string name="share_loading_title">Share</string>
+    <string name="share_loading_message">Preparing your image...</string>
+
+    <string name="add">Add</string>
+    <string name="share">Share</string>
+    <string name="remove">Remove</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">Ok</string>
+    <string name="remove_image_subreddit_confirm">Are you sure you want to remove this subreddit from the image sources lists?</string>
+    <string name="remove_comment_subreddit_confirm">Are you sure you want to remove this subreddit from the comment sources lists?</string>
+    <string name="add_subreddit">Add Subreddit...</string>
+    <string name="add_subreddit_hint">Subreddit e.g. Earthporn</string>
+    <string name="text_alignment">Text Alignment</string>
+
+    <string name="image_subreddits">Image Subreddits</string>
+    <string name="comment_subreddits">Comment Subreddits</string>
+    <string name="fonts">Fonts</string>
+
+    <string name="drawer_open">Drawer Open</string>
+    <string name="drawer_closed">Drawer Closed</string>
+
+    <string name="actions">Actions</string>
+    <string name="pro_feature_title_template">%1$s is a Pro Feature!</string>
+    <string name="go_pro_action">Go Pro Now!</string>
+    <string name="go_pro_blurb">Love BaconMasher but hate ads? Support the developer and go pro today!</string>
+
+    <string name="visit_website">Visit Hot PoData</string>
+    <string name="visit_website_blurb">Visit our website, read our blog, get updates.</string>
+    <string name="website_url">http://www.hotpodata.com</string>
+
+    <string name="follow_us_on_twitter">Follow us on twitter</string>
+    <string name="twitter_handle">\@hotpodata</string>
+    <string name="twitter_url">https://twitter.com/hotpodata</string>
+
+    <string name="follow_on_github">Follow us on github</string>
+    <string name="github_url">https://github.com/hotpodata</string>
+
+    <string name="apps">Our other apps</string>
+    <string name="redchain">RedChain</string>
+    <string name="redchain_desc">Complete your goals every day!</string>
+    <string name="filecat">FileCat</string>
+    <string name="filecat_desc">Browse files in a colorful way!</string>
+    <string name="wikicat">WikiCat</string>
+    <string name="wikicat_desc">Browse Wiki Encyclopedia in a colorful way!</string>
+    <string name="version_template">V%1$s by Hot PoData</string>
+
+    <string name="this_app">This App</string>
+    <string name="rate_us">Rate this app</string>
+    <string name="rate_us_blerb_template">Help spread the %1$s word!</string>
+    <string name="contact_email_addr_template">hotpodata+%1$s@gmail.com</string>
+    <string name="contact_the_developer">Contact the developer</string>
+
+    <string name="legal_heading">Legal</string>
+    <string name="legal_blurb">This software application is provided as is. Its creator(s) take no responsibility for consequences of its installation or use.</string>
+
+    <string name="acknowledgements">Acknowledgements</string>
+    <string name="timber">Timber</string>
+    <string name="timber_license">@string/license_apache</string>
+    <string name="timber_url">https://github.com/JakeWharton/timber</string>
+
+    <string name="joda">Joda-Time</string>
+    <string name="joda_license">@string/license_apache</string>
+    <string name="joda_url">http://www.joda.org/joda-time/</string>
+
+    <string name="license_apache">Apache 2.0</string>
+
+</resources>
