@@ -15,5 +15,5 @@ interface  EndPoints {
     fun getSubReddit(@Path("subreddit") subreddit: String, @Query("after") after: String?): Observable<Thing>
 
     @GET("/r/{subreddit}/comments/{article}/.json")
-    fun getArticleComments(@Path("subreddit") subreddit: String, @Path("article") articleId: String): Observable<MutableList<Thing>>
+    fun getArticleComments(@Path("subreddit") subreddit: String, @Path("article") articleId: String, @Query("depth") depth: Int?, @Query("limit") limit: Int?): Observable<MutableList<Thing>>
 }

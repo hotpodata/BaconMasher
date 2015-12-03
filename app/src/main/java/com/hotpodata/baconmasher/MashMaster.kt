@@ -232,7 +232,7 @@ object MashMaster {
     fun getCommentsFromSubArticle(subreddit: String, articleId: String): Observable<String> {
         Timber.d("getCommentsFromSubArticle subreddit:" + subreddit + " articleId:" + articleId)
         return Bacon.service
-                .getArticleComments(subreddit, articleId)
+                .getArticleComments(subreddit, articleId, 3, 25)//TODO: THINK ABOUT THIS
                 .flatMap {
                     Observable.from(it)
                             .filterNotNull()

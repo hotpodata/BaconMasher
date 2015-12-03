@@ -13,7 +13,8 @@
     <FrameLayout
         android:id="@+id/mash_loading_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/contentBackground">
 
         <ImageView
             android:id="@+id/bacon_masher"
@@ -60,7 +61,7 @@
             android:layout_height="match_parent"
             android:layout_margin="16dp"
             android:gravity="bottom|left"
-            android:maxLines="5"
+            android:maxLines="@integer/num_text_lines"
             android:textColor="#FFFFFF"
             android:textSize="56dp"
             app:minTextSize="16sp" />

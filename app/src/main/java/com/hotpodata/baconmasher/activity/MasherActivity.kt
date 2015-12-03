@@ -11,6 +11,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.content.FileProvider
 import android.support.v4.widget.DrawerLayout
@@ -29,8 +30,12 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.InterstitialAd
 import com.google.android.gms.analytics.HitBuilders
 import com.hotpodata.baconmasher.AnalyticsMaster
+import com.hotpodata.baconmasher.BuildConfig
 import com.hotpodata.baconmasher.MashMaster
 import com.hotpodata.baconmasher.R
 import com.hotpodata.baconmasher.adapter.MasherSettingsAdapter
@@ -49,10 +54,13 @@ import rx.schedulers.Schedulers
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
+import java.security.MessageDigest
+import java.util.*
 
 public class MasherActivity : AppCompatActivity() {
 
     val STATE_LAST_MASH = "STATE_LAST_MASH"
+    val STATE_MASH_COUNT = "STATE_MASH_COUNT"
 
     var mashContentContainer: FrameLayout? = null
     var mashTextView: TextView? = null
@@ -86,6 +94,13 @@ public class MasherActivity : AppCompatActivity() {
     var lastMash: MashData? = null
     var shareProgDialog: ProgressDialog? = null
     var errorDialog: AlertDialog? = null
+
+
+    //Ads...
+    var interstitialAd: InterstitialAd? = null
+    var mashcount = 0
+    var adRandom = Random()
+
 
     protected override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -143,14 +158,31 @@ public class MasherActivity : AppCompatActivity() {
         setUpLeftDrawer()
         setUpRightDrawer()
 
-        if (savedInstanceState != null && savedInstanceState.containsKey(STATE_LAST_MASH)) {
-            try {
-                lastMash = MashData.Serializer.fromJSON(JSONObject(savedInstanceState.getString(STATE_LAST_MASH)))
-            } catch(ex: Exception) {
-                Timber.e(ex, "Failure to parse out mash data from savedInstanceState")
+        if (savedInstanceState != null) {
+            if (savedInstanceState.containsKey(STATE_LAST_MASH)) {
+                try {
+                    lastMash = MashData.Serializer.fromJSON(JSONObject(savedInstanceState.getString(STATE_LAST_MASH)))
+                } catch(ex: Exception) {
+                    Timber.e(ex, "Failure to parse out mash data from savedInstanceState")
+                }
             }
+            mashcount = savedInstanceState.getInt(STATE_MASH_COUNT, 0)
         }
 
+        //Set up ads..
+        if (!BuildConfig.IS_PRO) {
+            var ad = InterstitialAd(this);
+            ad.setAdUnitId("ca-app-pub-3940256099942544/1033173712");
+            ad.adListener = object : AdListener() {
+                override fun onAdClosed() {
+                    super.onAdClosed()
+                    requestNewInterstitial()
+                    actionMashBacon()
+                }
+            }
+            interstitialAd = ad
+            requestNewInterstitial()
+        }
 
     }
 
@@ -169,6 +201,10 @@ public class MasherActivity : AppCompatActivity() {
         } else {
             fab?.hide()
             setMashHidden()
+            var mashSub = MashMaster.activeDataSubject
+            if (mashSub != null) {
+                subscribeToMash(mashSub.asObservable())
+            }
         }
         resumed = true
         Timber.i("Setting screen name:" + AnalyticsMaster.SCREEN_MASHER);
@@ -249,18 +285,31 @@ public class MasherActivity : AppCompatActivity() {
         if (mash != null) {
             out?.putString(STATE_LAST_MASH, MashData.Serializer.toJSON(mash).toString())
         }
+        out?.putInt(STATE_MASH_COUNT, mashcount)
     }
 
 
     fun actionMashBacon() {
+        mashcount++
+
+        if (!BuildConfig.IS_PRO && mashcount % 5 == 0 && adRandom.nextBoolean()) {
+            if (interstitialAd?.isLoaded ?: false) {
+                interstitialAd?.show()
+                return
+            }
+        }
+
+        subscribeToMash(MashMaster.doMash(this))
+        startHideMashAnim()
+    }
+
+    private fun subscribeToMash(observable: Observable<MashData>) {
         subMash?.unsubscribe()
-        subMash = MashMaster
-                .doMash(this)
+        subMash = observable
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe {
                     lastMash = null
-                    startHideMashAnim()
                     startLoadingAnimation()
                     supportInvalidateOptionsMenu()
                 }
@@ -409,10 +458,10 @@ public class MasherActivity : AppCompatActivity() {
         var masherView = loadingBaconMasher
         var baconView = loadingBacon
         if (animLoading == null && masherView != null && baconView != null) {
-            var anim = ValueAnimator.ofFloat(0f, masherView.height / 4f, 0f);
+            var anim = ValueAnimator.ofFloat(0f, 1f, 0f);
             with(anim!!) {
                 addUpdateListener {
-                    masherView.translationY = it.animatedValue as Float
+                    masherView.translationY = (it.animatedValue as Float * (masherView.height / 4f))
                     if (it.animatedFraction > 0.5f && it.animatedFraction < 0.70f) {
                         baconView.rotation = 20f - (it.animatedFraction * 20f)
                     }
@@ -558,4 +607,46 @@ public class MasherActivity : AppCompatActivity() {
             }
         }
     }
+
+    /*
+    ADD STUFF
+     */
+
+    private fun requestNewInterstitial() {
+        if (!BuildConfig.IS_PRO) {
+            var adRequest = with(AdRequest.Builder()) {
+                if (BuildConfig.IS_DEBUG_BUILD) {
+                    addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                    var andId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+                    var hash = md5(andId).toUpperCase()
+                    Timber.d("Adding test device. hash:" + hash)
+                    addTestDevice(hash)
+                }
+                build()
+            }
+            interstitialAd?.loadAd(adRequest);
+        }
+    }
+
+    private fun md5(s: String): String {
+        try {
+            var digest = MessageDigest.getInstance("MD5")
+            digest.update(s.toByteArray())
+            var messageDigest = digest.digest()
+
+            var hexString = StringBuffer()
+            for (i in messageDigest.indices) {
+                var h = Integer.toHexString(0xFF and messageDigest[i].toInt())
+                while (h.length < 2)
+                    h = "0" + h
+                hexString.append(h)
+            }
+            return hexString.toString()
+        } catch(ex: Exception) {
+            Timber.e(ex, "Fail in md5");
+        }
+        return ""
+    }
+
+
 }
