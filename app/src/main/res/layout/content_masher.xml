@@ -5,7 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/contentBackground"
-    android:fitsSystemWindows="true"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".activity.MasherActivity"
     tools:showIn="@layout/activity_masher">
@@ -40,6 +39,38 @@
             android:src="@drawable/bacon_one"
             android:tint="@color/colorPrimaryDark"
             android:tintMode="src_atop" />
+
+        <LinearLayout
+            android:id="@+id/loading_go_pro_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="@dimen/keyline_one"
+            android:visibility="gone"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="@dimen/keyline_one"
+                android:layout_weight="1"
+                android:gravity="center_vertical|right"
+                android:text="@string/dont_care_for_ads"
+                android:textColor="@color/primary_text"
+                android:textSize="14dp" />
+
+            <TextView
+                android:id="@+id/loading_go_pro_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical|left"
+                android:text="@string/go_pro"
+                android:textAllCaps="true"
+                android:textColor="@color/colorPrimary"
+                android:textSize="18dp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
     </FrameLayout>
 

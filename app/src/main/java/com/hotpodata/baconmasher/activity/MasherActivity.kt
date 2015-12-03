@@ -44,6 +44,7 @@ import com.hotpodata.baconmasher.data.ExceptionMissingSettings
 import com.hotpodata.baconmasher.data.GravityStringer
 import com.hotpodata.baconmasher.data.MashData
 import com.hotpodata.baconmasher.data.TypefaceCache
+import com.hotpodata.redchain.utils.IntentUtils
 import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
 import org.json.JSONObject
@@ -74,6 +75,8 @@ public class MasherActivity : AppCompatActivity() {
     var mashLoadingContainer: FrameLayout? = null
     var loadingBaconMasher: View? = null
     var loadingBacon: View? = null
+    var loadingGoProContainer: View? = null
+    var loadingGoProBtn: View? = null
 
     var fab: FloatingActionButton? = null
     var toolbar: Toolbar? = null
@@ -116,6 +119,8 @@ public class MasherActivity : AppCompatActivity() {
         loadingBacon = findViewById(R.id.bacon)
         mashContentContainer = findViewById(R.id.mash_content_container) as FrameLayout;
         mashLoadingContainer = findViewById(R.id.mash_loading_container) as FrameLayout;
+        loadingGoProContainer = findViewById(R.id.loading_go_pro_container)
+        loadingGoProBtn = findViewById(R.id.loading_go_pro_btn)
 
         setSupportActionBar(toolbar);
 
@@ -151,6 +156,10 @@ public class MasherActivity : AppCompatActivity() {
 
         }
 
+        loadingGoProBtn?.setOnClickListener() {
+            startActivity(IntentUtils.goPro(this))
+        }
+
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setHomeButtonEnabled(true)
         supportActionBar?.setShowHideAnimationEnabled(true)
@@ -177,6 +186,7 @@ public class MasherActivity : AppCompatActivity() {
                 override fun onAdClosed() {
                     super.onAdClosed()
                     requestNewInterstitial()
+                    loadingGoProContainer?.visibility = View.VISIBLE
                     actionMashBacon()
                 }
             }
@@ -365,6 +375,7 @@ public class MasherActivity : AppCompatActivity() {
         mashImageView?.translationY = 0f
         mashImageView?.alpha = 1f
         mashContentContainer?.visibility = View.VISIBLE
+        loadingGoProContainer?.visibility = View.GONE
         fab?.show()
         supportInvalidateOptionsMenu()
     }
