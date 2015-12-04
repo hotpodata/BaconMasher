@@ -7,10 +7,7 @@ import com.hotpodata.baconforkotlin.Bacon
 import com.hotpodata.baconforkotlin.network.model.Listing
 import com.hotpodata.baconforkotlin.network.model.t1
 import com.hotpodata.baconforkotlin.network.model.t3
-import com.hotpodata.baconmasher.data.ActiveStringManager
-import com.hotpodata.baconmasher.data.ExceptionMissingSettings
-import com.hotpodata.baconmasher.data.GravityStringer
-import com.hotpodata.baconmasher.data.MashData
+import com.hotpodata.baconmasher.data.*
 import com.hotpodata.baconmasher.utils.ImgurUtils
 import rx.Observable
 import rx.Subscription
@@ -25,8 +22,7 @@ import java.util.*
  * Created by jdrotos on 11/29/15.
  */
 object MashMaster {
-    val IMAGE_POOL_SIZE = 100
-    val COMMENT_POOL_SIZE = 100
+    val COMMENT_MAX_LENGTH = 100
 
     val PREF_KEY_IMAGE_REDDITS = "IMAGE_REDDITS"
     val PREF_KEY_COMMENT_REDDITS = "COMMENT_REDDITS"
@@ -34,10 +30,11 @@ object MashMaster {
     val PREF_KEY_TEXTGRAVITY = "TEXTGRAVITY"
 
     //Regex
-    val IMG_RGX_RAW = "(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*\\.(?:jpg|gif|png))(?:\\?([^#]*))?(?:#(.*))?".toRegex()
+    val IMG_RGX_RAW = "(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*\\.(?:jpg|png))$".toRegex()
     val COM_RGX_DELETED = "^(\\[deleted\\]|\\[DELETED\\]|\\[removed\\]|\\[REMOVED\\])$".toRegex()
     val COM_RGX_LINK = Patterns.WEB_URL.toRegex()
-    val COM_RGX_EMBEDDEDLINK = "\\[.*\\]\\(.*\\)"
+    val COM_RGX_EMBEDDEDLINK = "\\[(.*?)\\]\\((.*?)\\)".toRegex()
+    val COM_RGX_SPACE = "\\s+".toRegex()
 
     //var activeConfig: MashConfig? = null
     var activeData: MashData? = null
@@ -50,8 +47,23 @@ object MashMaster {
     var textgravity: ActiveStringManager? = null
 
     val random = Random()
+    var context: Context? = null
+
+    private var _bacon: Bacon? = null
+    var bacon: Bacon
+        get() {
+            if (_bacon == null) {
+                _bacon = Bacon("https://www.reddit.com", "android:com.hotpodata.baconmasher.free:v1.0.0 (by /u/hotpodata)")
+            }
+            return _bacon!!
+        }
+        set(value) {
+            _bacon = value
+        }
 
     public fun initMashMaster(ctx: Context) {
+        context = ctx;
+
         imageReddits = ActiveStringManager(ctx.applicationContext, PREF_KEY_IMAGE_REDDITS, object : ActiveStringManager.DefaultGenerator() {
             override fun getActiveDefault(): List<String> {
                 return ArrayList<String>(ctx.resources.getStringArray(R.array.imagereddits).asList())
@@ -92,6 +104,7 @@ object MashMaster {
             }
         })
 
+
     }
 
     fun doMash(ctx: Context): Observable<MashData> {
@@ -115,9 +128,8 @@ object MashMaster {
                 } else if (textgravity?.active?.size ?: 0 <= 0) {
                     Observable.error<MashData>(ExceptionMissingSettings(ctx.resources.getString(R.string.error_needs_gravity)))
                 } else {
-                    var imageObservable = getImageUrlFromSub(imageReddits!!.getRandomActive(), IMAGE_POOL_SIZE)
-                    //var imageObservable = Observable.just("http://i.imgur.com/692QYLe.jpg")
-                    var commentObservable = getCommentFromSub(commentReddits!!.getRandomActive(), COMMENT_POOL_SIZE)
+                    var imageObservable = getImageUrlFromSub(0, 20)
+                    var commentObservable = getCommentFromSub(0, 20)
                     var fontObservable = Observable.just(typefaces!!.getRandomActive())
                     var textGrav = Observable.just(textgravity!!.getRandomActive())
                     Observable.zip(imageObservable, commentObservable, fontObservable, textGrav) { img, com, font, tg -> MashData(img, com, font, tg) }
@@ -134,6 +146,83 @@ object MashMaster {
         activeDataSubject = BehaviorSubject.create()
         activeDataSubscription = observable.subscribe(activeDataSubject)
         return activeDataSubject!!.asObservable()
+    }
+
+    fun getImageUrlFromSub(attemptNum: Int, maxAttempts: Int): Observable<String> {
+        var subreddit = imageReddits?.getRandomActive()
+        Timber.d("getImageUrlFromSub:" + subreddit + " attemptNum:" + attemptNum + " maxAttempts:" + maxAttempts)
+        if (subreddit == null) {
+            return Observable.error(ExceptionMissingSettings("No active image subreddits"))
+        } else {
+            return bacon.service.getRandomSubredditPost(subreddit, UUID.randomUUID().toString())
+                    .flatMap {
+                        Observable.from(it)
+                    }
+                    .map {
+                        it.data
+                    }
+                    .flatMap {
+                        if (it is t3) {
+                            Observable.just(it)
+                        } else if (it is Listing) {
+                            Observable.from(getT3sFromListing(it))
+                        } else {
+                            Observable.empty()
+                        }
+                    }
+                    .map {
+                        var url = getImageUrlFromT3(it as t3)
+                        Timber.d("gotUrlFromT3:" + url)
+                        url
+                    }
+                    .filterNotNull()
+                    .switchIfEmpty(if (attemptNum < maxAttempts) getImageUrlFromSub(attemptNum + 1, maxAttempts) else Observable.error<String>(ExceptionNoImageInPost("Fail")))
+                    .doOnNext { Timber.d("getImageUrlFromSub attempt#" + attemptNum + " url:" + it) }
+        }
+    }
+
+    fun getCommentFromSub(attemptNum: Int, maxAttempts: Int): Observable<String> {
+        var subreddit = imageReddits?.getRandomActive()
+        Timber.d("getImageUrlFromSub:" + subreddit + " attemptNum:" + attemptNum + " maxAttempts:" + maxAttempts)
+        if (subreddit == null) {
+            return Observable.error(ExceptionMissingSettings("No active image subreddits"))
+        } else {
+            return bacon.service.getRandomSubredditPost(subreddit, UUID.randomUUID().toString())
+                    .flatMap {
+                        Observable.from(it)
+                    }
+                    .map {
+                        it.data
+                    }
+                    .flatMap {
+                        if (it is t1) {
+                            Observable.just(it)
+                        } else if (it is Listing) {
+                            Observable.from(getT1sFromListing(it))
+                        } else {
+                            Observable.empty()
+                        }
+                    }
+                    .flatMap {
+                        Observable.from(getCommentsFromT1(it))
+                    }
+                    .filter {
+                        //Filter out comments that are plain links and deleted/removed
+                        !COM_RGX_DELETED.matches(it) && !COM_RGX_LINK.matches(it)
+                    }
+                    .map {
+                        it.replace(COM_RGX_EMBEDDEDLINK, "$1").replace(COM_RGX_SPACE, " ")
+                    }
+                    .filter { it.length < COMMENT_MAX_LENGTH }
+                    .toList()
+                    .filter { it.size > 0 }
+                    .map {
+                        it[random.nextInt(it.size)]
+                    }
+                    .filter { it.length > 0 }
+                    .switchIfEmpty(if (attemptNum < maxAttempts) getCommentFromSub(attemptNum + 1, maxAttempts) else Observable.error(ExceptionNoCommentsInPost("Fail")))
+                    .doOnNext { Timber.d("getCommentFromSub attempt#" + attemptNum + " comment:" + it) }
+        }
     }
 
     fun getImageUrlFromT3(data: t3): String? {
@@ -157,166 +246,49 @@ object MashMaster {
         return null
     }
 
-    fun getImageUrlSampleFromSub(subreddit: String, next: String?): Observable<String> {
-        Timber.d("getImageUrlSampleFromSub subreddit:" + subreddit + " next:" + next)
-        return Bacon.service.getSubReddit(subreddit, next)
-                .filter { it != null && it.data != null && it.data is Listing }
-                .map { it.data }
-                .cast(Listing::class.java)
-                .flatMap {
-                    (if (it.after == null) Observable.empty() else getImageUrlSampleFromSub(subreddit, it.after)).startWith(
-                            Observable.from(it.children)
-                                    .filter() { it != null && it.data != null && it.data is t3 }
-                                    .map { it.data }
-                                    .cast(t3::class.java)
-                                    .map { getImageUrlFromT3(it) }
-                                    .filterNotNull())
-
-                }
-    }
-
-    fun getImageUrlFromSub(subreddit: String, sampleSize: Int): Observable<String> {
-        Timber.d("getImageUrlFromSub subreddit:" + subreddit + " sampleSize:" + sampleSize)
-        return getImageUrlSampleFromSub(subreddit, null)
-                .distinct()
-                .take(sampleSize)
-                .toList()
-                .map {
-                    Timber.d("getImageUrlFromSub samples got:" + it.size)
-                    if (it.size > 0) {
-                        it[random.nextInt(it.size)]
-                    } else {
-                        ""
-                    }
-                }
-    }
-
-    fun getCommentFromSub(subreddit: String, sampleSize: Int): Observable<String> {
-        Timber.d("getCommentFromSub subreddit:" + subreddit + " sampleSize:" + sampleSize)
-        return getCommentSampleFromSub(subreddit, null)
-                .distinct()
-                .filter {
-                    //Filter out comments that are plain links and deleted/removed
-                    !COM_RGX_DELETED.matches(it) && !COM_RGX_LINK.matches(it)
-                }
-                .map {
-                    //IF the comment contains embedded links, just replace with the text portion
-                    it.replace("\\[(.*?)\\]\\((.*?)\\)".toRegex(), "$1")
-                }
-                .take(sampleSize)
-                .toList()
-                .map {
-                    Timber.d("getCommentFromSub samples got:" + it.size)
-                    if (it.size > 0) {
-                        it[random.nextInt(it.size)]
-                    } else {
-                        ""
-                    }
-                }
-    }
-
-    fun getCommentSampleFromSub(subreddit: String, next: String?): Observable<String> {
-        Timber.d("getCommentSampleFromSub subreddit:" + subreddit + " next:" + next)
-        return Bacon.service.getSubReddit(subreddit, next)
-                .filter { it.data is Listing }
-                .map { it.data as Listing }
-                .flatMap {
-                    Timber.d("getCommentSampleFromSub subreddit:" + subreddit + " articles:" + it.children?.size)
-                    //List is a list of articles from the supplied subreddit
-                    var scrambledChildren = if (it.children == null) ArrayList() else ArrayList(it.children)
-                    Collections.shuffle(scrambledChildren)
-                    //We return that list but in scrambled order for better randomness
-                    Observable.from(scrambledChildren)
-                            .filter { it.data is t3 }
-                            .map { it.data as t3 }
-                            .filter { it.num_comments > 0 }
-                            .map { it.id }
-                            .flatMap {
-                                Timber.d("getCommentSampleFromSub subreddit:" + subreddit + " articlesid:" + it)
-                                if (it != null) {
-                                    getCommentsFromSubArticle(subreddit, it)
-                                } else {
-                                    Observable.empty()
-                                }
-                            }
-
-                }
-    }
-
-    fun getCommentsFromSubArticle(subreddit: String, articleId: String): Observable<String> {
-        Timber.d("getCommentsFromSubArticle subreddit:" + subreddit + " articleId:" + articleId)
-        return Bacon.service
-                .getArticleComments(subreddit, articleId, 3, 25)//TODO: THINK ABOUT THIS
-                .flatMap {
-                    Timber.d("getCommentsFromSubArticle - got array of results:" + it.size)
-                    Observable.from(it)
-                            .map { it.data }
-                            .flatMap {
-                                if (it is t1) {
-                                    Timber.d("getCommentsFromSubArticle - child is t1")
-                                    Observable.just(it)
-                                } else if (it is Listing) {
-                                    Timber.d("getCommentsFromSubArticle - child is Listing")
-                                    getT1sFromListing(it)
-                                } else {
-                                    Timber.d("getCommentsFromSubArticle - child is neither")
-                                    Observable.empty()
-                                }
-                            }
-                            .flatMap {
-                                Timber.d("getCommentsFromSubArticle - t1 got- calling getcommentsFromT1")
-                                getCommentsFromT1(it)
-                            }
-                }
-    }
-
-    fun getT1sFromListing(listing: Listing): Observable<t1> {
-        Timber.d("getT1sFromListing listing:" + listing.modhash)
-        if (listing.children != null) {
-            return Observable.from(listing.children)
-                    .map { it.data }
-                    .flatMap {
-                        if (it is t1) {
-                            Timber.d("getT1sFromListing child is t1 listing:" + listing.modhash)
-                            Observable.just(it)
-                        } else if (it is Listing) {
-                            Timber.d("getT1sFromListing child is Listing, calling getT1sFromListing - listing:" + listing.modhash)
-                            getT1sFromListing(it)
-                        } else {
-                            Timber.d("getT1sFromListing child is neither- listing:" + listing.modhash)
-                            Observable.empty()
-                        }
-                    }
+    fun getT1sFromListing(listing: Listing): List<t1> {
+        var list = ArrayList<t1>()
+        var children = listing?.children ?: ArrayList()
+        for (child in children) {
+            if (child.data is t1) {
+                list.add(child.data as t1)
+            } else if (child.data is Listing) {
+                list.addAll(getT1sFromListing(child.data as Listing))
+            }
         }
-        return Observable.empty()
+        return list
     }
 
-    fun getCommentsFromT1(data: t1): Observable<String> {
-        Timber.d("getCommentsFromT1 t1:" + data.body)
-        if (data.body != null) {
-            return Observable
-                    .just(data.replies)
-                    .map { it?.data }
-                    .flatMap {
-                        if (it is Listing) {
-                            Timber.d("getCommentsFromT1 - calling getT1sFromListing modhash:" + it.modhash)
-                            getT1sFromListing(it)
-                        } else if (it is t1) {
-                            Timber.d("getCommentsFromT1 - it is t1 returning body:" + it.body)
-                            Observable.just(it)
-                        } else {
-                            Timber.d("getCommentsFromT1 - return empty")
-                            Observable.empty<t1>()
-                        }
-                    }
-                    .flatMap {
-                        Timber.d("getCommentsFromT1 - got t1:" + it.body)
-                        getCommentsFromT1(it)
-                    }
-                    .startWith(data.body)
-        } else {
-            return Observable.empty()
+    fun getT3sFromListing(listing: Listing): List<t3> {
+        var list = ArrayList<t3>()
+        var children = listing?.children ?: ArrayList()
+        for (child in children) {
+            if (child.data is t3) {
+                list.add(child.data as t3)
+            } else if (child.data is Listing) {
+                list.addAll(getT3sFromListing(child.data as Listing))
+            }
         }
+        return list
     }
 
+    fun getCommentsFromT1(data: t1): List<String>{
+        var list = ArrayList<String>()
+        if(!data.body.isNullOrEmpty()){
+            list.add(data.body as String)
+        }
+
+        var dataReplies = data.replies
+        if(dataReplies != null) {
+            if(dataReplies.data is t1){
+                list.addAll(getCommentsFromT1(dataReplies.data as t1))
+            }else if(dataReplies.data is Listing){
+                var t1sinlisting = getT1sFromListing(dataReplies.data as Listing)
+                for(t1inlist in t1sinlisting){
+                    list.addAll(getCommentsFromT1(t1inlist))
+                }
+            }
+        }
+        return list
+    }
 }

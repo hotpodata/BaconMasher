@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="commentreddits">
+        <item>AdviceAnimals</item>
         <item>AskReddit</item>
+        <item>Funny</item>
+        <item>GetMotivated</item>
+        <item>MyLittlePony</item>
         <item>News</item>
         <item>Pics</item>
         <item>TIFU</item>

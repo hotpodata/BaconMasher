@@ -21,7 +21,6 @@ class ThingAdapter : TypeAdapter<Thing>() {
 
     override fun read(jsonReader: JsonReader?): Thing? {
         if (jsonReader != null) {
-            Timber.d("TypeAdapter<Thing> token:" + jsonReader.peek())
             if (jsonReader.peek() != JsonToken.BEGIN_OBJECT) {
                 jsonReader.skipValue()
             } else {
@@ -86,7 +85,7 @@ class ThingAdapter : TypeAdapter<Thing>() {
     fun readListing(jsonReader: JsonReader): Listing? {
         Timber.d("readListing")
         if (jsonReader.peek() == JsonToken.BEGIN_OBJECT) {
-            return Bacon.gson.fromJson<Listing>(jsonReader)
+            return Bacon.GsonHelper.gson.fromJson<Listing>(jsonReader)
         } else {
             jsonReader.skipValue()
         }
@@ -94,21 +93,17 @@ class ThingAdapter : TypeAdapter<Thing>() {
     }
 
     fun readT1(jsonReader: JsonReader): t1? {
-        Timber.d("readT1")
         if (jsonReader.peek() == JsonToken.BEGIN_OBJECT) {
-            Timber.d("readT1 - was BEGIN_OBJECT - path:" + jsonReader.path)
-            return Bacon.gson.fromJson<t1>(jsonReader)
+            return Bacon.GsonHelper.gson.fromJson<t1>(jsonReader)
         } else {
-            Timber.d("readT1 - jsonReader.skipValue()")
             jsonReader.skipValue()
         }
         return null
     }
 
     fun readT3(jsonReader: JsonReader): t3? {
-        Timber.d("readT3")
         if (jsonReader.peek() == JsonToken.BEGIN_OBJECT) {
-            return Bacon.gson.fromJson<t3>(jsonReader)
+            return Bacon.GsonHelper.gson.fromJson<t3>(jsonReader)
         } else {
             jsonReader.skipValue()
         }

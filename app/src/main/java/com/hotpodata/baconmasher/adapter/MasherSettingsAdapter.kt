@@ -169,22 +169,28 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
                         builder.setCancelable(true)
                         builder.setPositiveButton(R.string.add) {
                             dialogInterface, i ->
+                            var analyticsAction: String? = null
                             when (data.type) {
                                 SelectableType.IMAGE -> {
                                     MashMaster.imageReddits?.add(edittext.text.toString().trim(), true)
+                                    analyticsAction = AnalyticsMaster.ACTION_ADD_IMAGE_REDDIT
                                 }
                                 SelectableType.COMMENT -> {
                                     MashMaster.commentReddits?.add(edittext.text.toString().trim(), true)
+                                    analyticsAction = AnalyticsMaster.ACTION_ADD_COMMENT_REDDIT
                                 }
                             }
                             syncWithMashMaster()
-                            try {
-                                AnalyticsMaster.getTracker(mContext).send(HitBuilders.EventBuilder()
-                                        .setCategory(AnalyticsMaster.CATEGORY_ACTION)
-                                        .setAction(AnalyticsMaster.ACTION_ADD_SETTINGS_REDDIT)
-                                        .build());
-                            } catch(ex: Exception) {
-                                Timber.e(ex, "Analytics Exception");
+                            if (analyticsAction != null) {
+                                try {
+                                    AnalyticsMaster.getTracker(mContext).send(HitBuilders.EventBuilder()
+                                            .setCategory(AnalyticsMaster.CATEGORY_ACTION)
+                                            .setAction(analyticsAction)
+                                            .setLabel(edittext.text.toString().trim())
+                                            .build());
+                                } catch(ex: Exception) {
+                                    Timber.e(ex, "Analytics Exception");
+                                }
                             }
                         }
                         builder.setNegativeButton(R.string.cancel) { dialogInterface, i -> dialogInterface.cancel() }
@@ -200,25 +206,36 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
                     vh.mCheckBox.isChecked = !vh.mCheckBox.isChecked
                 }
                 vh.mCheckBox.setOnCheckedChangeListener() { cb: CompoundButton?, b: Boolean ->
+                    var analyticsAction: String? = null
                     when (data.type) {
                         SelectableType.IMAGE -> {
                             if (b != MashMaster.imageReddits?.isActive(data.key)) {
                                 MashMaster.imageReddits?.setActive(data.key, b)
                                 syncWithMashMaster()
+                                analyticsAction = if (b) AnalyticsMaster.ACTION_SET_IMAGE_SUBREDDIT_ACTIVE else AnalyticsMaster.ACTION_SET_IMAGE_SUBREDDIT_INACTIVE
                             }
                         }
                         SelectableType.COMMENT -> {
                             if (b != MashMaster.commentReddits?.isActive(data.key)) {
                                 MashMaster.commentReddits?.setActive(data.key, b)
                                 syncWithMashMaster()
+                                analyticsAction = if (b) AnalyticsMaster.ACTION_SET_COMMENT_SUBREDDIT_ACTIVE else AnalyticsMaster.ACTION_SET_COMMENT_SUBREDDIT_INACTIVE
                             }
                         }
                         SelectableType.FONT -> {
                             if (b != MashMaster.typefaces?.isActive(data.key)) {
                                 MashMaster.typefaces?.setActive(data.key, b)
                                 syncWithMashMaster()
+                                analyticsAction = if (b) AnalyticsMaster.ACTION_SET_FONT_ACTIVE else AnalyticsMaster.ACTION_SET_FONT_INACTIVE
                             }
                         }
+                    }
+                    if (analyticsAction != null) {
+                        AnalyticsMaster.getTracker(mContext).send(HitBuilders.EventBuilder()
+                                .setCategory(AnalyticsMaster.CATEGORY_ACTION)
+                                .setAction(analyticsAction)
+                                .setLabel(data.key)
+                                .build());
                     }
                 }
                 if (data.type == SelectableType.COMMENT || data.type == SelectableType.IMAGE) {
@@ -237,20 +254,29 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
                             builder.setCancelable(true)
                             builder.setPositiveButton(R.string.remove) {
                                 dialogInterface, i ->
+
+                                var analyticsAction: String? = null
                                 when (data.type) {
                                     SelectableType.IMAGE -> {
                                         MashMaster.imageReddits?.remove(data.key)
+                                        analyticsAction = AnalyticsMaster.ACTION_REMOVE_IMAGE_REDDIT
                                     }
                                     SelectableType.COMMENT -> {
                                         MashMaster.commentReddits?.remove(data.key)
+                                        analyticsAction = AnalyticsMaster.ACTION_REMOVE_COMMENT_REDDIT
                                     }
                                 }
+
                                 syncWithMashMaster()
+
                                 try {
-                                    AnalyticsMaster.getTracker(mContext).send(HitBuilders.EventBuilder()
-                                            .setCategory(AnalyticsMaster.CATEGORY_ACTION)
-                                            .setAction(AnalyticsMaster.ACTION_REMOVE_SETTINGS_REDDIT)
-                                            .build());
+                                    if (analyticsAction != null) {
+                                        AnalyticsMaster.getTracker(mContext).send(HitBuilders.EventBuilder()
+                                                .setCategory(AnalyticsMaster.CATEGORY_ACTION)
+                                                .setAction(analyticsAction)
+                                                .setLabel(data.key)
+                                                .build());
+                                    }
                                 } catch(ex: Exception) {
                                     Timber.e(ex, "Analytics Exception");
                                 }

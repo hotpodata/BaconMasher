@@ -4,6 +4,8 @@
     <color name="colorPrimaryDark">#E64A19</color>
     <color name="colorAccent">@color/colorPrimary</color>
 
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
     <color name="contentBackground">#FFFFFF</color>
 
     <color name="primary_text">#212121</color>
@@ -17,4 +19,13 @@
     <color name="setting_image_color">@color/material_deep_purple</color>
     <color name="setting_comment_color">@color/material_indigo</color>
     <color name="setting_font_color">@color/material_deep_orange</color>
+
+    <array name="text_colors">
+        <item>@color/white</item>
+        <item>@color/material_yellow</item>
+        <item>@color/material_red</item>
+        <item>@color/material_blue</item>
+        <item>@color/material_indigo</item>
+        <item>@color/primary_text</item>
+    </array>
 </resources>

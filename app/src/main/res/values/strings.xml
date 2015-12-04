@@ -7,14 +7,18 @@
 
     <string name="error">Error</string>
     <string name="unknown_error">An unknown error occurred!</string>
-    <string name="error_couldnt_load_image">Failure to load image.</string>
+    <string name="error_couldnt_load_image">Error loading image.</string>
     <string name="error_needs_image_subreddit">You must have at least one image subreddit selected.</string>
     <string name="error_needs_comment_subreddit">You must have at least one comment subreddit selected.</string>
     <string name="error_needs_gravity">You must set at least one valid text alignment.</string>
     <string name="error_needs_font">You must have at least one font selected.</string>
+    <string name="error_couldnt_load_image_from_sub">Couldn\'t find image in %1$s</string>
+    <string name="error_couldnt_load_comments_from_sub">Couldn\'t find any comments in %1$s</string>
 
     <string name="share_loading_title">Share</string>
     <string name="share_loading_message">Preparing your image...</string>
+
+    <string name="change_text_color">Change Text Color</string>
 
     <string name="add">Add</string>
     <string name="share">Share</string>

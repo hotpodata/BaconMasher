@@ -1,14 +1,11 @@
 package com.hotpodata.baconmasher.activity;
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ValueAnimator
+import android.animation.*
 import android.app.ProgressDialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.Canvas
+import android.graphics.*
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -62,6 +59,7 @@ public class MasherActivity : AppCompatActivity() {
 
     val STATE_LAST_MASH = "STATE_LAST_MASH"
     val STATE_MASH_COUNT = "STATE_MASH_COUNT"
+    val STATE_SELECTED_TEXT_COLOR_INDEX = "STATE_SELECTED_TEXT_COLOR_INDEX"
 
     var mashContentContainer: FrameLayout? = null
     var mashTextView: TextView? = null
@@ -87,6 +85,7 @@ public class MasherActivity : AppCompatActivity() {
     var animLoading: ValueAnimator? = null
     var animHideMash: ValueAnimator? = null
     var animShowMash: ValueAnimator? = null
+    var animTextColor: Animator? = null
 
     var subMash: Subscription? = null
     var subShare: Subscription? = null
@@ -97,6 +96,10 @@ public class MasherActivity : AppCompatActivity() {
     var lastMash: MashData? = null
     var shareProgDialog: ProgressDialog? = null
     var errorDialog: AlertDialog? = null
+
+    //Text colors
+    var textColors: List<Int>? = null
+    var selectedColorIndex: Int = 0
 
 
     //Ads...
@@ -122,7 +125,22 @@ public class MasherActivity : AppCompatActivity() {
         loadingGoProContainer = findViewById(R.id.loading_go_pro_container)
         loadingGoProBtn = findViewById(R.id.loading_go_pro_btn)
 
+        textColors = resources.getIntArray(R.array.text_colors).toList()
+
         setSupportActionBar(toolbar);
+
+        if (savedInstanceState != null) {
+            if (savedInstanceState.containsKey(STATE_LAST_MASH)) {
+                try {
+                    lastMash = MashData.Serializer.fromJSON(JSONObject(savedInstanceState.getString(STATE_LAST_MASH)))
+                } catch(ex: Exception) {
+                    Timber.e(ex, "Failure to parse out mash data from savedInstanceState")
+                }
+            }
+            mashcount = savedInstanceState.getInt(STATE_MASH_COUNT, 0)
+            selectedColorIndex = savedInstanceState.getInt(STATE_SELECTED_TEXT_COLOR_INDEX, 0)
+        }
+
 
         drawerToggle = object : ActionBarDrawerToggle(this, drawerLayout, R.string.drawer_open, R.string.drawer_closed) {
             override fun onDrawerClosed(drawerView: View?) {
@@ -167,21 +185,12 @@ public class MasherActivity : AppCompatActivity() {
         setUpLeftDrawer()
         setUpRightDrawer()
 
-        if (savedInstanceState != null) {
-            if (savedInstanceState.containsKey(STATE_LAST_MASH)) {
-                try {
-                    lastMash = MashData.Serializer.fromJSON(JSONObject(savedInstanceState.getString(STATE_LAST_MASH)))
-                } catch(ex: Exception) {
-                    Timber.e(ex, "Failure to parse out mash data from savedInstanceState")
-                }
-            }
-            mashcount = savedInstanceState.getInt(STATE_MASH_COUNT, 0)
-        }
+
 
         //Set up ads..
         if (!BuildConfig.IS_PRO) {
             var ad = InterstitialAd(this);
-            ad.setAdUnitId("ca-app-pub-3940256099942544/1033173712");
+            ad.setAdUnitId(getString(R.string.interstitial_add_unit_id))
             ad.adListener = object : AdListener() {
                 override fun onAdClosed() {
                     super.onAdClosed()
@@ -226,6 +235,11 @@ public class MasherActivity : AppCompatActivity() {
         super.onPause()
         resumed = false
         subShare?.unsubscribe()
+
+        animTextColor?.cancel()
+        animShowMash?.cancel()
+        animHideMash?.cancel()
+        animLoading?.cancel()
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -242,6 +256,12 @@ public class MasherActivity : AppCompatActivity() {
     public override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_masher, menu);
+        var colorItem = menu?.findItem(R.id.action_color)
+        if (colorItem != null) {
+            var icon = colorItem.icon.mutate()
+            icon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP)
+            colorItem.setIcon(icon)
+        }
         return true;
     }
 
@@ -278,14 +298,23 @@ public class MasherActivity : AppCompatActivity() {
                 actionShare()
                 return true;
             }
+            R.id.action_color -> {
+                actionShiftTextColor()
+                return true;
+            }
         }
         return super.onOptionsItemSelected(item);
     }
 
     public override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        var item = menu?.findItem(R.id.action_share)
-        item?.setVisible(lastMash != null)
-        item?.setEnabled(lastMash != null)
+        var shareItem = menu?.findItem(R.id.action_share)
+        shareItem?.setVisible(lastMash != null)
+        shareItem?.setEnabled(lastMash != null)
+        var colorItem = menu?.findItem(R.id.action_color)
+        colorItem?.setVisible(lastMash != null)
+        colorItem?.setEnabled(lastMash != null)
+
+
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -296,8 +325,29 @@ public class MasherActivity : AppCompatActivity() {
             out?.putString(STATE_LAST_MASH, MashData.Serializer.toJSON(mash).toString())
         }
         out?.putInt(STATE_MASH_COUNT, mashcount)
+        out?.putInt(STATE_SELECTED_TEXT_COLOR_INDEX, selectedColorIndex)
     }
 
+
+    fun actionShiftTextColor() {
+        var currentColor: Int = textColors?.get(selectedColorIndex) ?: Color.WHITE
+        selectedColorIndex = ((selectedColorIndex + 1) % (textColors?.size as Int))
+        var newColor: Int = textColors?.get(selectedColorIndex) ?: Color.WHITE
+
+        if (animTextColor?.isRunning ?: false) {
+            animTextColor?.cancel()
+        }
+
+        animTextColor = with(ValueAnimator.ofObject(ArgbEvaluator(), currentColor, newColor)) {
+            addUpdateListener {
+                if (resumed) {
+                    mashTextView?.setTextColor(it.animatedValue as Int)
+                }
+            }
+            setDuration(150)
+        }
+        animTextColor?.start()
+    }
 
     fun actionMashBacon() {
         mashcount++
@@ -307,6 +357,17 @@ public class MasherActivity : AppCompatActivity() {
                 interstitialAd?.show()
                 return
             }
+        }
+
+        try {
+            AnalyticsMaster.getTracker(this).send(HitBuilders.EventBuilder()
+                    .setCategory(AnalyticsMaster.CATEGORY_ACTION)
+                    .setAction(AnalyticsMaster.ACTION_MASH)
+                    .setLabel(AnalyticsMaster.LABEL_MASH_COUNT)
+                    .setValue(mashcount.toLong())
+                    .build());
+        } catch(ex: Exception) {
+            Timber.e(ex, "Analytics Exception");
         }
 
         subscribeToMash(MashMaster.doMash(this))
@@ -367,6 +428,7 @@ public class MasherActivity : AppCompatActivity() {
         mashTextView?.gravity = GravityStringer.strToGrav[data.textGravity]
         mashTextView?.text = data.comment
         mashTextView?.typeface = TypefaceCache.getTypeFace(this, data.font);
+        mashTextView?.setTextColor(textColors?.get(selectedColorIndex) ?: 0)
         lastMash = data
     }
 
@@ -544,6 +606,16 @@ public class MasherActivity : AppCompatActivity() {
                 create()
             }
             errorDialog?.show()
+
+            try {
+                AnalyticsMaster.getTracker(this).send(HitBuilders.EventBuilder()
+                        .setCategory(AnalyticsMaster.CATEGORY_ACTION)
+                        .setAction(AnalyticsMaster.ACTION_ERROR_SHOWN)
+                        .setLabel(msg)
+                        .build());
+            } catch(ex: Exception) {
+                Timber.e(ex, "Analytics Exception");
+            }
         }
     }
 
@@ -584,6 +656,16 @@ public class MasherActivity : AppCompatActivity() {
                             subShare = null
                             shareProgDialog?.dismiss()
                         })
+        try {
+            AnalyticsMaster.getTracker(this).send(HitBuilders.EventBuilder()
+                    .setCategory(AnalyticsMaster.CATEGORY_ACTION)
+                    .setAction(AnalyticsMaster.ACTION_SHARE)
+                    .setLabel(AnalyticsMaster.LABEL_MASH_COUNT)
+                    .setValue(mashcount.toLong())
+                    .build());
+        } catch(ex: Exception) {
+            Timber.e(ex, "Analytics Exception");
+        }
     }
 
     fun loadBitmapFromView(v: View): Bitmap {

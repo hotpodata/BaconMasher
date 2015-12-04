@@ -19,10 +19,19 @@ object AnalyticsMaster {
 
     //ACTIONS
     val ACTION_MASH = "Mash"
-    val ACTION_SET_COMMENT_REDDIT = "SetCommentReddit"
-    val ACTION_SET_IMAGE_REDDIT = "SetImageReddit"
-    val ACTION_REMOVE_SETTINGS_REDDIT = "RemoveSettingsReddit"
-    val ACTION_ADD_SETTINGS_REDDIT = "AddSettingsReddit"
+    val ACTION_SHARE = "Share"
+    val ACTION_ADD_COMMENT_REDDIT = "AddCommentReddit"
+    val ACTION_ADD_IMAGE_REDDIT = "AddImageReddit"
+    val ACTION_REMOVE_COMMENT_REDDIT = "RemoveCommentReddit"
+    val ACTION_REMOVE_IMAGE_REDDIT = "RemoveImageReddit"
+    val ACTION_SET_IMAGE_SUBREDDIT_ACTIVE = "ActivateImageReddit"
+    val ACTION_SET_IMAGE_SUBREDDIT_INACTIVE = "DeactivateImageReddit"
+    val ACTION_SET_COMMENT_SUBREDDIT_ACTIVE = "ActivateCommentReddit"
+    val ACTION_SET_COMMENT_SUBREDDIT_INACTIVE = "DeactivateCommentReddit"
+    val ACTION_SET_FONT_ACTIVE = "ActivateFont"
+    val ACTION_SET_FONT_INACTIVE = "DeactivateFont"
+    val ACTION_ERROR_SHOWN = "ErrorShown"
+
     val ACTION_RATE_APP = "Rate_App"
     val ACTION_FILECAT = "FileCat"
     val ACTION_REDCHAIN = "RedChain"
@@ -32,9 +41,10 @@ object AnalyticsMaster {
     val ACTION_TWITTER = "Twitter"
     val ACTION_GITHUB = "GitHub"
     val ACTION_GO_PRO_SIDEBAR = "Go_Pro_Sidebar"
-    val ACTION_GO_PRO_FRAGMENT = "Go_Pro_Fragment"
-    val ACTION_TOGGLE_REMINDER_NOTIFICATION = "Toggle_Reminder_Notification"
-    val ACTION_TOGGLE_BROKEN_NOTIFICATION = "Toggle_Broken_Chain_Notification"
+    val ACTION_GO_PRO_LOADING = "Go_Pro_Fragment"
+
+    //Labels (note, sometimes labels are generated in code. e.g. subreddit name)
+    val LABEL_MASH_COUNT = "MashCount"
 
     private var tracker: Tracker? = null
     public fun getTracker(context: Context): Tracker {

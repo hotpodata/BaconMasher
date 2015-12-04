@@ -169,7 +169,7 @@ class SideBarAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.ViewHolde
             try {
                 AnalyticsMaster.getTracker(mContext).send(HitBuilders.EventBuilder()
                         .setCategory(AnalyticsMaster.CATEGORY_ACTION)
-                        .setAction(AnalyticsMaster.ACTION_TWITTER)
+                        .setAction(AnalyticsMaster.ACTION_GITHUB)
                         .build());
             } catch(ex: Exception) {
                 Timber.e(ex, "Analytics Exception");

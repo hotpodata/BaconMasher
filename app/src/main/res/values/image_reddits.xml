@@ -5,7 +5,10 @@
         <item>EarthPorn</item>
         <item>FoodPorn</item>
         <item>HumanPorn</item>
-        <item>OldSchoolCool</item>
+        <item>MildlyInteresting</item>
+        <item>Pics</item>
+        <item>PhotoshopBattles</item>
         <item>RoomPorn</item>
+        <item>WTF</item>
     </string-array>
 </resources>
