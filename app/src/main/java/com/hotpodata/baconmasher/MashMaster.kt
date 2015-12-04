@@ -3,16 +3,16 @@ package com.hotpodata.baconmasher
 import android.content.Context
 import android.text.TextUtils
 import android.util.Patterns
-import com.hotpodata.baconforkotlin.Bacon
+import com.hotpodata.baconforkotlin.RedditSessionService
 import com.hotpodata.baconforkotlin.network.model.Listing
 import com.hotpodata.baconforkotlin.network.model.t1
 import com.hotpodata.baconforkotlin.network.model.t3
 import com.hotpodata.baconmasher.data.*
 import com.hotpodata.baconmasher.utils.ImgurUtils
+import com.hotpodata.baconmasher.utils.UserAgentUtils
 import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
-import rx.lang.kotlin.filterNotNull
 import rx.schedulers.Schedulers
 import rx.subjects.BehaviorSubject
 import timber.log.Timber
@@ -29,6 +29,9 @@ object MashMaster {
     val PREF_KEY_TYPEFACES = "TYPEFACES"
     val PREF_KEY_TEXTGRAVITY = "TEXTGRAVITY"
 
+    val PREF_KEY_APPINFO = "APPINFO"
+    val PREF_UNIQUE_ID = "UNIQUE_ID"
+
     //Regex
     val IMG_RGX_RAW = "(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*\\.(?:jpg|png))$".toRegex()
     val COM_RGX_DELETED = "^(\\[deleted\\]|\\[DELETED\\]|\\[removed\\]|\\[REMOVED\\])$".toRegex()
@@ -36,7 +39,6 @@ object MashMaster {
     val COM_RGX_EMBEDDEDLINK = "\\[(.*?)\\]\\((.*?)\\)".toRegex()
     val COM_RGX_SPACE = "\\s+".toRegex()
 
-    //var activeConfig: MashConfig? = null
     var activeData: MashData? = null
     var activeDataSubject: BehaviorSubject<MashData>? = null
     var activeDataSubscription: Subscription? = null
@@ -49,16 +51,18 @@ object MashMaster {
     val random = Random()
     var context: Context? = null
 
-    private var _bacon: Bacon? = null
-    var bacon: Bacon
+    private var _service: RedditSessionService? = null
+    var service: RedditSessionService
         get() {
-            if (_bacon == null) {
-                _bacon = Bacon("https://www.reddit.com", "android:com.hotpodata.baconmasher.free:v1.0.0 (by /u/hotpodata)")
+            var ctx = context
+            if (_service == null && ctx != null) {
+                //TODO: GENERATE USER-AGENT STRING
+                _service = RedditSessionService(UserAgentUtils.genUserAgentStr(ctx, ctx.getString(R.string.reddit_user_name)), getUniqueId(), ctx.getString(R.string.reddit_app_id) ?: "")
             }
-            return _bacon!!
+            return _service!!
         }
         set(value) {
-            _bacon = value
+            _service = value
         }
 
     public fun initMashMaster(ctx: Context) {
@@ -154,28 +158,45 @@ object MashMaster {
         if (subreddit == null) {
             return Observable.error(ExceptionMissingSettings("No active image subreddits"))
         } else {
-            return bacon.service.getRandomSubredditPost(subreddit, UUID.randomUUID().toString())
+            return service.getAuthenticatedService()
                     .flatMap {
-                        Observable.from(it)
+                        it.getRandomSubredditPost(subreddit, UUID.randomUUID().toString())
+                                .flatMap {
+                                    Timber.d("inFlatMap")
+                                    //Load up all the t3s
+                                    var t3s = ArrayList<t3>()
+                                    for (item in it) {
+                                        var tmp = item.data
+                                        if (tmp is t3) {
+                                            t3s.add(tmp)
+                                        } else if (tmp is Listing) {
+                                            t3s.addAll(getT3sFromListing(tmp))
+                                        }
+
+                                        if (t3s.size > 50) {
+                                            //This is a big enough sampling
+                                            Timber.d("t3s.size reached limit. Breaking.")
+                                            break;
+                                        }
+                                    }
+
+                                    Timber.d("collected t3s:" + t3s.size)
+                                    //Get a filtered list of comments from the t3s
+                                    var urls = ArrayList<String>()
+                                    for (t3 in t3s) {
+                                        getImageUrlFromT3(t3)?.let {
+                                            urls.add(it)
+                                        }
+                                    }
+                                    Timber.d("collected urls:" + urls.size)
+
+                                    if (urls.size > 0) {
+                                        Observable.just(urls[random.nextInt(urls.size)])
+                                    } else {
+                                        Observable.empty()
+                                    }
+                                }
                     }
-                    .map {
-                        it.data
-                    }
-                    .flatMap {
-                        if (it is t3) {
-                            Observable.just(it)
-                        } else if (it is Listing) {
-                            Observable.from(getT3sFromListing(it))
-                        } else {
-                            Observable.empty()
-                        }
-                    }
-                    .map {
-                        var url = getImageUrlFromT3(it as t3)
-                        Timber.d("gotUrlFromT3:" + url)
-                        url
-                    }
-                    .filterNotNull()
                     .switchIfEmpty(if (attemptNum < maxAttempts) getImageUrlFromSub(attemptNum + 1, maxAttempts) else Observable.error<String>(ExceptionNoImageInPost("Fail")))
                     .doOnNext { Timber.d("getImageUrlFromSub attempt#" + attemptNum + " url:" + it) }
         }
@@ -187,39 +208,70 @@ object MashMaster {
         if (subreddit == null) {
             return Observable.error(ExceptionMissingSettings("No active image subreddits"))
         } else {
-            return bacon.service.getRandomSubredditPost(subreddit, UUID.randomUUID().toString())
+            return service.getAuthenticatedService()
                     .flatMap {
-                        Observable.from(it)
+                        it.getRandomSubredditPost(subreddit, UUID.randomUUID().toString())
+                                .flatMap {
+                                    Timber.d("inFlatMap")
+
+                                    //Load up all the t1s
+                                    var t1s = ArrayList<t1>()
+                                    for (item in it) {
+                                        var tmp = item.data
+                                        if (tmp is t1) {
+                                            t1s.add(tmp)
+                                        } else if (tmp is Listing) {
+                                            t1s.addAll(getT1sFromListing(tmp))
+                                        }
+
+                                        if (t1s.size > 50) {
+                                            //This is a big enough sampling
+                                            Timber.d("t1s.size reached limit. Breaking.")
+                                            break;
+                                        }
+                                    }
+
+                                    Timber.d("collected t1s:" + t1s.size)
+
+                                    //Get a filtered list of comments from the t1s
+                                    var comments = ArrayList<String>()
+                                    var maxCommentsSize = 100
+                                    for (t1 in t1s) {
+                                        var t1Comments = getCommentsFromT1(t1)
+                                        for (t1Comment in t1Comments) {
+                                            if (!COM_RGX_DELETED.matches(t1Comment) && !COM_RGX_LINK.matches(t1Comment)) {
+                                                var comment = t1Comment.replace(COM_RGX_EMBEDDEDLINK, "$1").replace(COM_RGX_SPACE, " ")
+                                                if (comment.length > 0 && comment.length < COMMENT_MAX_LENGTH) {
+                                                    if (!comments.contains(comment)) {
+                                                        comments.add(comment)
+                                                    } else {
+                                                        Timber.d("comment was dup:" + comment)
+                                                    }
+                                                }
+                                            }
+                                            //This is a big enough sampling..
+                                            if (comments.size > maxCommentsSize) {
+                                                Timber.d("comments.size reached limit. Breaking.")
+                                                break;
+                                            }
+                                        }
+
+                                        //This is a big enough sampling..
+                                        if (comments.size > maxCommentsSize) {
+                                            Timber.d("comments.size reached limit. Breaking.")
+                                            break;
+                                        }
+                                    }
+                                    Timber.d("collected comments:" + comments.size)
+
+                                    if (comments.size > 0) {
+                                        Observable.just(comments[random.nextInt(comments.size)])
+                                    } else {
+                                        Observable.empty()
+                                    }
+
+                                }
                     }
-                    .map {
-                        it.data
-                    }
-                    .flatMap {
-                        if (it is t1) {
-                            Observable.just(it)
-                        } else if (it is Listing) {
-                            Observable.from(getT1sFromListing(it))
-                        } else {
-                            Observable.empty()
-                        }
-                    }
-                    .flatMap {
-                        Observable.from(getCommentsFromT1(it))
-                    }
-                    .filter {
-                        //Filter out comments that are plain links and deleted/removed
-                        !COM_RGX_DELETED.matches(it) && !COM_RGX_LINK.matches(it)
-                    }
-                    .map {
-                        it.replace(COM_RGX_EMBEDDEDLINK, "$1").replace(COM_RGX_SPACE, " ")
-                    }
-                    .filter { it.length < COMMENT_MAX_LENGTH }
-                    .toList()
-                    .filter { it.size > 0 }
-                    .map {
-                        it[random.nextInt(it.size)]
-                    }
-                    .filter { it.length > 0 }
                     .switchIfEmpty(if (attemptNum < maxAttempts) getCommentFromSub(attemptNum + 1, maxAttempts) else Observable.error(ExceptionNoCommentsInPost("Fail")))
                     .doOnNext { Timber.d("getCommentFromSub attempt#" + attemptNum + " comment:" + it) }
         }
@@ -231,6 +283,22 @@ object MashMaster {
         if (url != null && !TextUtils.isEmpty(url)) {
             if (ImgurUtils.isImgurUrl(url)) {
                 //IMGUR LINKS
+                var baseUrl = if (ImgurUtils.isImgurDirectLinkUrl(url)) {
+                    url //.replace(".jpg",".png").replace("m.png",".png").replace("h.png",".png")
+                } else if (ImgurUtils.isImgurHashLinkUrl(url)) {
+                    url + ".png"
+                } else {
+                    null
+                }
+
+                if (baseUrl != null) {
+                    baseUrl = baseUrl.replace(".jpg", ".png")
+                    for (thumbMode in arrayOf("s", "b", "t", "m", "l", "h")) {
+                        baseUrl = baseUrl?.replace(thumbMode + ".png", ".png")
+                    }
+                    return baseUrl?.replace(".png", "h.png")
+                }
+
                 if (ImgurUtils.isImgurDirectLinkUrl(url)) {
                     return url
                 } else if (ImgurUtils.isImgurHashLinkUrl(url)) {
@@ -272,23 +340,40 @@ object MashMaster {
         return list
     }
 
-    fun getCommentsFromT1(data: t1): List<String>{
+    fun getCommentsFromT1(data: t1): List<String> {
         var list = ArrayList<String>()
-        if(!data.body.isNullOrEmpty()){
+        if (!data.body.isNullOrEmpty()) {
             list.add(data.body as String)
         }
 
         var dataReplies = data.replies
-        if(dataReplies != null) {
-            if(dataReplies.data is t1){
+        if (dataReplies != null) {
+            if (dataReplies.data is t1) {
                 list.addAll(getCommentsFromT1(dataReplies.data as t1))
-            }else if(dataReplies.data is Listing){
+            } else if (dataReplies.data is Listing) {
                 var t1sinlisting = getT1sFromListing(dataReplies.data as Listing)
-                for(t1inlist in t1sinlisting){
+                for (t1inlist in t1sinlisting) {
                     list.addAll(getCommentsFromT1(t1inlist))
                 }
             }
         }
         return list
     }
+
+
+    private fun getUniqueId(): String {
+        context?.getSharedPreferences(PREF_KEY_APPINFO, Context.MODE_PRIVATE)?.let {
+            var pref = it.getString(PREF_UNIQUE_ID, "")
+            if (pref.isNullOrEmpty()) {
+                pref = UUID.randomUUID().toString()
+                with(it.edit()) {
+                    putString(PREF_UNIQUE_ID, pref)
+                    commit()
+                }
+            }
+            return pref
+        }
+        return ""
+    }
+
 }

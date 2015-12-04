@@ -1,13 +1,11 @@
 package com.hotpodata.baconforkotlin.network.adapter
 
 import com.github.salomonbrys.kotson.fromJson
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import com.google.gson.stream.JsonWriter
-import com.hotpodata.baconforkotlin.Bacon
+import com.hotpodata.baconforkotlin.GsonHelper
 import com.hotpodata.baconforkotlin.network.model.Listing
 import com.hotpodata.baconforkotlin.network.model.Thing
 import com.hotpodata.baconforkotlin.network.model.t1
@@ -85,7 +83,7 @@ class ThingAdapter : TypeAdapter<Thing>() {
     fun readListing(jsonReader: JsonReader): Listing? {
         Timber.d("readListing")
         if (jsonReader.peek() == JsonToken.BEGIN_OBJECT) {
-            return Bacon.GsonHelper.gson.fromJson<Listing>(jsonReader)
+            return GsonHelper.gson.fromJson<Listing>(jsonReader)
         } else {
             jsonReader.skipValue()
         }
@@ -94,7 +92,7 @@ class ThingAdapter : TypeAdapter<Thing>() {
 
     fun readT1(jsonReader: JsonReader): t1? {
         if (jsonReader.peek() == JsonToken.BEGIN_OBJECT) {
-            return Bacon.GsonHelper.gson.fromJson<t1>(jsonReader)
+            return GsonHelper.gson.fromJson<t1>(jsonReader)
         } else {
             jsonReader.skipValue()
         }
@@ -103,7 +101,7 @@ class ThingAdapter : TypeAdapter<Thing>() {
 
     fun readT3(jsonReader: JsonReader): t3? {
         if (jsonReader.peek() == JsonToken.BEGIN_OBJECT) {
-            return Bacon.GsonHelper.gson.fromJson<t3>(jsonReader)
+            return GsonHelper.gson.fromJson<t3>(jsonReader)
         } else {
             jsonReader.skipValue()
         }

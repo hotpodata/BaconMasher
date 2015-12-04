@@ -58,6 +58,7 @@ import java.util.*
 public class MasherActivity : AppCompatActivity() {
 
     val STATE_LAST_MASH = "STATE_LAST_MASH"
+    val STATE_LAST_MASH_IMAGE_LOADED = "STATE_LAST_MASH_IMAGE_LOADED"
     val STATE_MASH_COUNT = "STATE_MASH_COUNT"
     val STATE_SELECTED_TEXT_COLOR_INDEX = "STATE_SELECTED_TEXT_COLOR_INDEX"
 
@@ -94,6 +95,7 @@ public class MasherActivity : AppCompatActivity() {
     var resumed = false
 
     var lastMash: MashData? = null
+    var lastMashImageLoaded = false
     var shareProgDialog: ProgressDialog? = null
     var errorDialog: AlertDialog? = null
 
@@ -139,6 +141,7 @@ public class MasherActivity : AppCompatActivity() {
             }
             mashcount = savedInstanceState.getInt(STATE_MASH_COUNT, 0)
             selectedColorIndex = savedInstanceState.getInt(STATE_SELECTED_TEXT_COLOR_INDEX, 0)
+            lastMashImageLoaded = savedInstanceState.getBoolean(STATE_LAST_MASH_IMAGE_LOADED, false)
         }
 
 
@@ -323,6 +326,7 @@ public class MasherActivity : AppCompatActivity() {
         var mash = lastMash
         if (mash != null) {
             out?.putString(STATE_LAST_MASH, MashData.Serializer.toJSON(mash).toString())
+            out?.putBoolean(STATE_LAST_MASH_IMAGE_LOADED, lastMashImageLoaded)
         }
         out?.putInt(STATE_MASH_COUNT, mashcount)
         out?.putInt(STATE_SELECTED_TEXT_COLOR_INDEX, selectedColorIndex)
@@ -350,9 +354,7 @@ public class MasherActivity : AppCompatActivity() {
     }
 
     fun actionMashBacon() {
-        mashcount++
-
-        if (!BuildConfig.IS_PRO && mashcount % 5 == 0 && adRandom.nextBoolean()) {
+        if (!BuildConfig.IS_PRO && mashcount > 0 && mashcount % 5 == 0 && adRandom.nextBoolean()) {
             if (interstitialAd?.isLoaded ?: false) {
                 interstitialAd?.show()
                 return
@@ -392,6 +394,7 @@ public class MasherActivity : AppCompatActivity() {
                             Timber.e(it, "fail")
                             stopHideMashAnim()
                             stopLoadingAnimation()
+                            resetLoadingAnimation()
                             setMashHidden()
                             if (it is ExceptionMissingSettings) {
                                 drawerLayout?.openDrawer(rightDrawer)
@@ -402,28 +405,42 @@ public class MasherActivity : AppCompatActivity() {
 
 
     fun bindMash(data: MashData) {
-        Picasso.with(this)
-                .load(data.imageUrl)
-                .noFade()
-                .noPlaceholder()
-                .fit()
-                .centerCrop()
-                .into(mashImageView, object : Callback {
-                    override fun onSuccess() {
-                        if (resumed) {
-                            startShowMashAnim()
-                            stopLoadingAnimation()
-                        } else {
-                            setMashShowing()
-                        }
+        var wasResumed = resumed
+        var wasLoaded = (lastMash == data && lastMashImageLoaded)
+        lastMashImageLoaded = wasLoaded
+        with(Picasso.with(this).load(data.imageUrl)) {
+            if (wasResumed && !wasLoaded) {
+                noFade()
+            }
+            noPlaceholder()
+            fit()
+            centerCrop()
+            into(mashImageView, object : Callback {
+                override fun onSuccess() {
+                    if (wasResumed || !wasLoaded) {
+                        startShowMashAnim()
+                    } else {
+                        setMashShowing()
                     }
+                    stopLoadingAnimation()
+                    lastMashImageLoaded = true
+                    if (!wasLoaded) {
+                        //We only update the mashcount after successful displays
+                        //This way if the thing is throwing errors, we don't penalize
+                        //the user
+                        mashcount++
+                    }
+                }
 
-                    override fun onError() {
-                        stopLoadingAnimation()
-                        showErrorDialog(getString(R.string.error_couldnt_load_image))
-                        lastMash = null
-                    }
-                })
+                override fun onError() {
+                    stopLoadingAnimation()
+                    resetLoadingAnimation()
+                    showErrorDialog(getString(R.string.error_couldnt_load_image))
+                    lastMash = null
+                    lastMashImageLoaded = false
+                }
+            })
+        }
 
         mashTextView?.gravity = GravityStringer.strToGrav[data.textGravity]
         mashTextView?.text = data.comment
@@ -439,6 +456,8 @@ public class MasherActivity : AppCompatActivity() {
         mashContentContainer?.visibility = View.VISIBLE
         loadingGoProContainer?.visibility = View.GONE
         fab?.show()
+        //We reset the loading stuff here because it is hidden at this point
+        resetLoadingAnimation()
         supportInvalidateOptionsMenu()
     }
 
@@ -560,6 +579,11 @@ public class MasherActivity : AppCompatActivity() {
     fun stopLoadingAnimation() {
         animLoading?.cancel()
         animLoading = null
+    }
+
+    fun resetLoadingAnimation() {
+        loadingBacon?.rotation = 0f
+        loadingBaconMasher?.translationY = 0f
     }
 
 
