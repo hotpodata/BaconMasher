@@ -1,9 +1,14 @@
 package com.hotpodata.baconmasher
 
 import android.content.Context
+import android.graphics.Point
+import android.text.Html
+import android.text.Spanned
 import android.text.TextUtils
 import android.util.Patterns
+import android.view.WindowManager
 import com.hotpodata.baconforkotlin.RedditSessionService
+import com.hotpodata.baconforkotlin.network.model.ImageInfo
 import com.hotpodata.baconforkotlin.network.model.Listing
 import com.hotpodata.baconforkotlin.network.model.t1
 import com.hotpodata.baconforkotlin.network.model.t3
@@ -112,6 +117,12 @@ object MashMaster {
     }
 
     fun doMash(ctx: Context): Observable<MashData> {
+        var wm = ctx.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        var display = wm.getDefaultDisplay()
+        var size = Point()
+        display.getSize(size)
+        var screenWidth = size.x
+        var screenHeight = size.y
 
         if (!(activeDataSubscription?.isUnsubscribed ?: true)) {
             activeDataSubscription?.unsubscribe()
@@ -132,7 +143,7 @@ object MashMaster {
                 } else if (textgravity?.active?.size ?: 0 <= 0) {
                     Observable.error<MashData>(ExceptionMissingSettings(ctx.resources.getString(R.string.error_needs_gravity)))
                 } else {
-                    var imageObservable = getImageUrlFromSub(0, 20)
+                    var imageObservable = getImageUrlFromSub(0, 20, screenWidth, screenHeight)
                     var commentObservable = getCommentFromSub(0, 20)
                     var fontObservable = Observable.just(typefaces!!.getRandomActive())
                     var textGrav = Observable.just(textgravity!!.getRandomActive())
@@ -152,7 +163,7 @@ object MashMaster {
         return activeDataSubject!!.asObservable()
     }
 
-    fun getImageUrlFromSub(attemptNum: Int, maxAttempts: Int): Observable<String> {
+    fun getImageUrlFromSub(attemptNum: Int, maxAttempts: Int, targetWidth: Int, targetHeight: Int): Observable<String> {
         var subreddit = imageReddits?.getRandomActive()
         Timber.d("getImageUrlFromSub:" + subreddit + " attemptNum:" + attemptNum + " maxAttempts:" + maxAttempts)
         if (subreddit == null) {
@@ -184,7 +195,7 @@ object MashMaster {
                                     //Get a filtered list of comments from the t3s
                                     var urls = ArrayList<String>()
                                     for (t3 in t3s) {
-                                        getImageUrlFromT3(t3)?.let {
+                                        getImageUrlFromT3(t3, targetWidth, targetHeight)?.let {
                                             urls.add(it)
                                         }
                                     }
@@ -197,7 +208,7 @@ object MashMaster {
                                     }
                                 }
                     }
-                    .switchIfEmpty(if (attemptNum < maxAttempts) getImageUrlFromSub(attemptNum + 1, maxAttempts) else Observable.error<String>(ExceptionNoImageInPost("Fail")))
+                    .switchIfEmpty(if (attemptNum < maxAttempts) getImageUrlFromSub(attemptNum + 1, maxAttempts, targetWidth, targetHeight) else Observable.error<String>(ExceptionNoImageInPost("Fail")))
                     .doOnNext { Timber.d("getImageUrlFromSub attempt#" + attemptNum + " url:" + it) }
         }
     }
@@ -277,41 +288,38 @@ object MashMaster {
         }
     }
 
-    fun getImageUrlFromT3(data: t3): String? {
-        Timber.d("getImageUrlFromT3 t3:" + data.title)
-        var url = data.url
-        if (url != null && !TextUtils.isEmpty(url)) {
-            if (ImgurUtils.isImgurUrl(url)) {
-                //IMGUR LINKS
-                var baseUrl = if (ImgurUtils.isImgurDirectLinkUrl(url)) {
-                    url //.replace(".jpg",".png").replace("m.png",".png").replace("h.png",".png")
-                } else if (ImgurUtils.isImgurHashLinkUrl(url)) {
-                    url + ".png"
-                } else {
-                    null
-                }
-
-                if (baseUrl != null) {
-                    baseUrl = baseUrl.replace(".jpg", ".png")
-                    for (thumbMode in arrayOf("s", "b", "t", "m", "l", "h")) {
-                        baseUrl = baseUrl?.replace(thumbMode + ".png", ".png")
-                    }
-                    return baseUrl?.replace(".png", "h.png")
-                }
-
-                if (ImgurUtils.isImgurDirectLinkUrl(url)) {
-                    return url
-                } else if (ImgurUtils.isImgurHashLinkUrl(url)) {
-                    return url + ".png"
-                }
-                //TODO: Support imgur albums and galleries
-            } else if (url.matches(IMG_RGX_RAW)) {
-                //OTHER DIRECT IMAGE LINKS
-                return url
+    fun getImageUrlFromT3(data: t3, targetWidth: Int, targetHeight: Int): String? {
+        Timber.d("getImageUrlFromT3 t3:" + data.title + " tw:" + targetWidth + " th:" + targetHeight)
+        return data?.preview?.images?.first()?.let {
+            var images = ArrayList<ImageInfo>()
+            it?.source?.let {
+                images.add(it)
             }
-            //TODO: Support more image hosts
+
+            it?.resolutions?.let {
+                for (image in it) {
+                    images.add(image)
+                }
+            }
+            var hDom = targetHeight > targetWidth
+            var closest: ImageInfo? = null
+            var closestPercDiff = 1000f
+            for (image in images) {
+                var percDiff = if (hDom) Math.abs(100 - ((image.height.toFloat() / targetHeight.toFloat()) * 100)) else Math.abs(100 - ((image.width.toFloat() / targetWidth.toFloat()) * 100))
+                Timber.d("getImageUrlFromT3 seeking - hdom:" + hDom + " w:" + targetWidth + " h:" + targetHeight + " closest w:" + closest?.width + " h:" + closest?.height + " %:" + closestPercDiff + " current - w:" + image.width + " h:" + image.height + " %:" + percDiff)
+                if (closest == null) {
+                    closest = image
+                    closestPercDiff = percDiff
+                } else if (percDiff < closestPercDiff) {
+                    closest = image
+                    closestPercDiff = percDiff
+                }
+            }
+            Timber.d("getImageUrlFromT3 seeking - w:" + targetWidth + " h:" + targetHeight + " found w:" + closest?.width + " h:" + closest?.height)
+            return closest?.url?.let {
+                Html.fromHtml(it).toString()
+            }
         }
-        return null
     }
 
     fun getT1sFromListing(listing: Listing): List<t1> {
