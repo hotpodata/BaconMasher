@@ -9,6 +9,7 @@ import com.squareup.okhttp.logging.HttpLoggingInterceptor
 import rx.Observable
 import rx.lang.kotlin.BehaviourSubject
 import timber.log.Timber
+import java.net.URLDecoder
 
 /**
  * Created by jdrotos on 12/4/15.
@@ -34,11 +35,11 @@ class RedditSessionService(val userAgent: String, val uniqueDeviceId: String, va
                 }
                 .map {
                     var token = it.access_token
-                    if(token != null) {
+                    if (token != null) {
                         authToken = token
                         authExpires = (System.currentTimeMillis() / 1000L) + it.expires_in
                         token
-                    }else {
+                    } else {
                         throw RuntimeException("Empty token")
                     }
                 }
@@ -80,6 +81,27 @@ class RedditSessionService(val userAgent: String, val uniqueDeviceId: String, va
                 }
                 Timber.d("New req Authorization:" + req?.header("Authorization"))
                 return chain?.proceed(req)
+            }
+        })
+
+        //Sanatize headers - sometimes reddit redirect headers contained a full url in
+        //the "location" header. This url would sometimes contain special characters. e.g. umlouts
+        //which would cause okhttp to throw an exception. No More!
+        client.networkInterceptors().add(object : Interceptor {
+            override fun intercept(chain: Interceptor.Chain?): Response? {
+                var req = chain?.request()
+                return chain?.proceed(req)?.let {
+                    var location = it.header("location")?.let {
+                        var loc = URLDecoder.decode(it, "UTF-8")
+                        Timber.d("location header fix - oig:" + it + " new:" + loc)
+                        loc
+                    }
+                    if (location != null) {
+                        it.newBuilder().header("location", location).build()
+                    } else {
+                        it
+                    }
+                }
             }
         })
 
