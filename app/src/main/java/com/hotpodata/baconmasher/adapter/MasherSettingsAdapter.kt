@@ -2,10 +2,9 @@ package com.hotpodata.baconmasher.adapter
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.Typeface
+import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.widget.RecyclerView
-import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,7 +16,6 @@ import com.hotpodata.baconmasher.AnalyticsMaster
 import com.hotpodata.baconmasher.MashMaster
 import com.hotpodata.baconmasher.R
 import com.hotpodata.baconmasher.adapter.viewholder.*
-import com.hotpodata.baconmasher.data.ActiveStringManager
 import com.hotpodata.baconmasher.data.TypefaceCache
 import com.hotpodata.baconmasher.view.TextAlignmentSelector
 import timber.log.Timber
@@ -45,10 +43,10 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
 
     init {
         mRows = ArrayList()
-        mPrimColor = ctx.resources.getColor(R.color.colorPrimary)
-        mAccentColor = ctx.resources.getColor(R.color.colorAccent)
+        mPrimColor = ContextCompat.getColor(ctx, R.color.colorPrimary)
+        mAccentColor = ContextCompat.getColor(ctx, R.color.colorAccent)
         mContext = ctx
-        mInactiveColor = mContext.resources.getColor(R.color.material_grey)
+        mInactiveColor = ContextCompat.getColor(ctx, R.color.material_grey)
         mRows = buildRows()
     }
 
@@ -153,8 +151,7 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
                 vh.mIcon.setImageResource(R.drawable.ic_action_add)
 
                 vh.itemView.setOnClickListener() {
-                    var builder = AlertDialog.Builder(mContext)
-                    with(builder) {
+                    with(AlertDialog.Builder(mContext)) {
                         setTitle(R.string.add_subreddit)
                         var edittext = EditText(mContext);
                         edittext.hint = mContext.resources.getString(R.string.add_subreddit_hint)
@@ -164,20 +161,21 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
                         lp.leftMargin = mContext.resources.getDimensionPixelSize(R.dimen.keyline_one)
                         lp.rightMargin = lp.leftMargin
                         edittext.layoutParams = lp
-                        builder.setView(edittext)
+                        setView(edittext)
 
-                        builder.setCancelable(true)
-                        builder.setPositiveButton(R.string.add) {
+                        setCancelable(true)
+                        setPositiveButton(R.string.add) {
                             dialogInterface, i ->
-                            var analyticsAction: String? = null
-                            when (data.type) {
+                            var analyticsAction = when (data.type) {
                                 SelectableType.IMAGE -> {
                                     MashMaster.imageReddits?.add(edittext.text.toString().trim(), true)
-                                    analyticsAction = AnalyticsMaster.ACTION_ADD_IMAGE_REDDIT
+                                    AnalyticsMaster.ACTION_ADD_IMAGE_REDDIT
                                 }
                                 SelectableType.COMMENT -> {
                                     MashMaster.commentReddits?.add(edittext.text.toString().trim(), true)
-                                    analyticsAction = AnalyticsMaster.ACTION_ADD_COMMENT_REDDIT
+                                    AnalyticsMaster.ACTION_ADD_COMMENT_REDDIT
+                                }else -> {
+                                    null
                                 }
                             }
                             syncWithMashMaster()
@@ -193,10 +191,9 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
                                 }
                             }
                         }
-                        builder.setNegativeButton(R.string.cancel) { dialogInterface, i -> dialogInterface.cancel() }
-                        builder.create().show()
+                        setNegativeButton(R.string.cancel) { dialogInterface, i -> dialogInterface.cancel() }
+                        create().show()
                     }
-                    true;
                 }
             }
             ROW_TYPE_SELECTABLE, ROW_TYPE_SELECTABLE_FONT -> {
@@ -248,7 +245,8 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
                                 }
                                 SelectableType.COMMENT -> {
                                     setMessage(R.string.remove_comment_subreddit_confirm)
-                                }
+                                }else -> {
+                            }
                             }
 
                             builder.setCancelable(true)
@@ -264,7 +262,8 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
                                     SelectableType.COMMENT -> {
                                         MashMaster.commentReddits?.remove(data.key)
                                         analyticsAction = AnalyticsMaster.ACTION_REMOVE_COMMENT_REDDIT
-                                    }
+                                    } else -> {
+                                }
                                 }
 
                                 syncWithMashMaster()
@@ -294,7 +293,6 @@ class MasherSettingsAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.Vi
             }
             ROW_TYPE_TEXT_ALIGNMENT_SELECTOR -> {
                 val vh = holder as RowTextAlignmentSelectorViewHolder
-                val data = objData as TextAlignmentSelectorData
                 vh.mTextAlignmentSelector.selectedBgColor = mAccentColor
                 vh.mTextAlignmentSelector.selectedIconColor = Color.WHITE
                 vh.mTextAlignmentSelector.selected = MashMaster.textgravity?.active!!

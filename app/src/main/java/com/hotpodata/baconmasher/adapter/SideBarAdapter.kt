@@ -3,9 +3,8 @@ package com.hotpodata.baconmasher.adapter
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.Typeface
 import android.net.Uri
+import android.support.v4.content.ContextCompat
 import android.support.v7.widget.RecyclerView
 import android.text.TextUtils
 import android.view.LayoutInflater
@@ -36,7 +35,7 @@ class SideBarAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.ViewHolde
     private var mContext: Context
 
     init {
-        mColor = ctx.resources.getColor(R.color.colorPrimary)
+        mColor = ContextCompat.getColor(ctx, R.color.colorPrimary)
         mContext = ctx
         mRows = buildRows()
     }
@@ -91,7 +90,7 @@ class SideBarAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.ViewHolde
         //GO PRO
         if (!BuildConfig.IS_PRO) {
             sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.go_pro_action), mContext.resources.getString(R.string.go_pro_blurb, mContext.resources.getString(R.string.app_name)), View.OnClickListener {
-                var intent = IntentUtils.goPro(mContext)
+                var intent = IntentUtils.goPro()
                 mContext.startActivity(intent)
                 try {
                     AnalyticsMaster.getTracker(mContext).send(HitBuilders.EventBuilder()

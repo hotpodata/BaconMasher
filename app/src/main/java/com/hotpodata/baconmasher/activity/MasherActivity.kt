@@ -1,15 +1,22 @@
 package com.hotpodata.baconmasher.activity;
 
-import android.animation.*
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
 import android.app.ProgressDialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.support.design.widget.FloatingActionButton
+import android.support.v4.content.ContextCompat
 import android.support.v4.content.FileProvider
 import android.support.v4.widget.DrawerLayout
 import android.support.v7.app.ActionBarDrawerToggle
@@ -111,19 +118,19 @@ public class MasherActivity : AppCompatActivity() {
 
 
     protected override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_masher);
-        toolbar = findViewById(R.id.toolbar) as Toolbar;
-        fab = findViewById(R.id.fab) as FloatingActionButton;
-        drawerLayout = findViewById(R.id.drawer_layout) as DrawerLayout
-        leftDrawer = findViewById(R.id.left_drawer) as RecyclerView
-        rightDrawer = findViewById(R.id.right_drawer) as RecyclerView
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_masher)
+        toolbar = findViewById(R.id.toolbar) as Toolbar?
+        fab = findViewById(R.id.fab) as FloatingActionButton?
+        drawerLayout = findViewById(R.id.drawer_layout) as DrawerLayout?
+        leftDrawer = findViewById(R.id.left_drawer) as RecyclerView?
+        rightDrawer = findViewById(R.id.right_drawer) as RecyclerView?
         mashTextView = findViewById(R.id.text) as TextView?
         mashImageView = findViewById(R.id.image) as ImageView?
         loadingBaconMasher = findViewById(R.id.bacon_masher)
         loadingBacon = findViewById(R.id.bacon)
-        mashContentContainer = findViewById(R.id.mash_content_container) as FrameLayout;
-        mashLoadingContainer = findViewById(R.id.mash_loading_container) as FrameLayout;
+        mashContentContainer = findViewById(R.id.mash_content_container) as FrameLayout?
+        mashLoadingContainer = findViewById(R.id.mash_loading_container) as FrameLayout?
         loadingGoProContainer = findViewById(R.id.loading_go_pro_container)
         loadingGoProBtn = findViewById(R.id.loading_go_pro_btn)
 
@@ -157,13 +164,13 @@ public class MasherActivity : AppCompatActivity() {
         drawerLayout?.setDrawerListener(drawerToggle)
 
         fab?.setOnClickListener() {
-            if (subMash == null || subMash?.isUnsubscribed() ?: false) {
+            if (subMash?.isUnsubscribed() ?: true) {
                 actionMashBacon()
             }
         };
 
         mashLoadingContainer?.setOnClickListener() {
-            if (subMash == null || subMash?.isUnsubscribed() ?: false) {
+            if (subMash?.isUnsubscribed() ?: true) {
                 actionMashBacon()
             }
         }
@@ -178,7 +185,7 @@ public class MasherActivity : AppCompatActivity() {
         }
 
         loadingGoProBtn?.setOnClickListener() {
-            startActivity(IntentUtils.goPro(this))
+            startActivity(IntentUtils.goPro())
         }
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -269,13 +276,13 @@ public class MasherActivity : AppCompatActivity() {
     }
 
     public override fun onBackPressed() {
-        if (drawerLayout!!.isDrawerOpen(leftDrawer) || drawerLayout!!.isDrawerOpen(rightDrawer)) {
-            drawerLayout!!.closeDrawers()
+        if (drawerLayout?.isDrawerOpen(leftDrawer) ?: false || drawerLayout?.isDrawerOpen(rightDrawer) ?: false) {
+            drawerLayout?.closeDrawers()
         } else if (immersiveMode) {
             showSystemUI()
-        } else if (shareProgDialog != null && shareProgDialog!!.isShowing) {
+        } else if (shareProgDialog?.isShowing ?: false) {
             shareProgDialog?.cancel()
-        } else if (errorDialog != null && errorDialog!!.isShowing) {
+        } else if (errorDialog?.isShowing ?: false) {
             errorDialog?.cancel()
         } else {
             super.onBackPressed()
@@ -601,8 +608,10 @@ public class MasherActivity : AppCompatActivity() {
 
     public fun setUpLeftDrawer() {
         if (sideBarAdapter == null) {
-            sideBarAdapter = SideBarAdapter(this);
-            sideBarAdapter?.setAccentColor(resources.getColor(R.color.colorPrimary))
+            sideBarAdapter = with(SideBarAdapter(this)) {
+                setAccentColor(ContextCompat.getColor(this@MasherActivity, R.color.colorPrimary))
+                this
+            }
             leftDrawer?.adapter = sideBarAdapter
             leftDrawer?.layoutManager = LinearLayoutManager(this)
         }
@@ -693,7 +702,6 @@ public class MasherActivity : AppCompatActivity() {
     }
 
     fun loadBitmapFromView(v: View): Bitmap {
-        var start = System.currentTimeMillis()
         var b = Bitmap.createBitmap(v.width, v.height, Bitmap.Config.ARGB_8888)
         var c = Canvas(b)
         v.draw(c)

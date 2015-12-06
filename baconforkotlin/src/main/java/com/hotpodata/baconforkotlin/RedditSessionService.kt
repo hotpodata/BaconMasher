@@ -22,7 +22,7 @@ class RedditSessionService(val userAgent: String, val uniqueDeviceId: String, va
 
     public fun getAuthenticatedService(): Observable<RedditApi> {
         if (authenticatedRedditApi != null) {
-            if (authToken != null && authExpires != null && authExpires > (System.currentTimeMillis() / 1000L)) {
+            if (authToken != null && authExpires > (System.currentTimeMillis() / 1000L)) {
                 return Observable.just(authenticatedRedditApi)
             }
         }
@@ -50,7 +50,7 @@ class RedditSessionService(val userAgent: String, val uniqueDeviceId: String, va
     }
 
     private fun dressApplicationIdForAuthHeader(appId: String): String {
-        return "Basic " + Base64.encodeToString("v56Ugwjl6WUqMA:".toByteArray(), Base64.NO_WRAP);
+        return "Basic " + Base64.encodeToString((appId + ":").toByteArray(), Base64.NO_WRAP);
     }
 
     private fun dressTokenForAuthHeader(token: String): String {

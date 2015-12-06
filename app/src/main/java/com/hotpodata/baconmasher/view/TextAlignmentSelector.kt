@@ -2,11 +2,9 @@ package com.hotpodata.baconmasher.view
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.ColorFilter
 import android.graphics.PorterDuff
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import com.hotpodata.baconmasher.R
@@ -46,22 +44,22 @@ class TextAlignmentSelector : LinearLayout {
         }
 
     constructor(context: Context?) : super(context) {
-        init(context, null)
+        init(context)
     }
 
     constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {
-        init(context, attrs)
+        init(context)
     }
 
     constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        init(context, attrs)
+        init(context)
     }
 
     constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : super(context, attrs, defStyleAttr, defStyleRes) {
-        init(context, attrs)
+        init(context)
     }
 
-    private fun init(context: Context?, attrs: AttributeSet?) {
+    private fun init(context: Context?) {
         var inflater = context?.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater;
         inflater.inflate(R.layout.view_text_alignment_selector, this);
 
@@ -79,8 +77,8 @@ class TextAlignmentSelector : LinearLayout {
 
         for (view in views) {
             view?.setOnClickListener() {
-                if (selected.contains(it.tag)) {
-                    selected.remove(it.tag)
+                if (selected.containsRaw(it.tag)) {
+                    selected.removeRaw(it.tag)
                 } else {
                     selected.add(it.tag as String)
                 }

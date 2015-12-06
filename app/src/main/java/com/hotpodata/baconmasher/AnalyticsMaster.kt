@@ -3,7 +3,6 @@ package com.hotpodata.baconmasher
 import android.content.Context
 import com.google.android.gms.analytics.GoogleAnalytics
 import com.google.android.gms.analytics.Tracker
-import com.hotpodata.baconmasher.R
 
 /**
  * Created by jdrotos on 11/18/15.

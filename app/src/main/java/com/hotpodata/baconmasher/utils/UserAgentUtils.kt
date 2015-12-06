@@ -9,7 +9,7 @@ import timber.log.Timber
  * Created by jdrotos on 12/4/15.
  */
 object UserAgentUtils {
-    public fun genUserAgentStr(ctx: Context, redditUserName: String) :String{
+    public fun genUserAgentStr(ctx: Context, redditUserName: String): String {
         var version: String = "?"
         try {
             val pInfo = ctx.packageManager.getPackageInfo(ctx.packageName, 0)

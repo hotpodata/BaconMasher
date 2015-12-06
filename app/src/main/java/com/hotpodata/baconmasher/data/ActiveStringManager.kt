@@ -2,8 +2,6 @@ package com.hotpodata.baconmasher.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import org.json.JSONArray
-import timber.log.Timber
 import java.util.*
 
 /**
@@ -42,7 +40,7 @@ class ActiveStringManager(var ctx: Context, val PREF_KEY: String, val defaultGen
         return activeList
     }
 
-    public fun getRandomActive() : String{
+    public fun getRandomActive(): String {
         var activeList = activeAsList()
         return activeList.get(random.nextInt(activeList.size))
     }
@@ -52,9 +50,9 @@ class ActiveStringManager(var ctx: Context, val PREF_KEY: String, val defaultGen
     }
 
     public fun setActive(str: String, isActive: Boolean) {
-        if(isActive) {
+        if (isActive) {
             active.add(str)
-        }else{
+        } else {
             active.remove(str)
         }
         writeActiveToStorage()
@@ -129,6 +127,6 @@ class ActiveStringManager(var ctx: Context, val PREF_KEY: String, val defaultGen
     }
 
     private fun getSharedPrefs(): SharedPreferences {
-        return context!!.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
+        return context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE);
     }
 }

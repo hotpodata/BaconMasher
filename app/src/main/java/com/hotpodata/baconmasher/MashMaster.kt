@@ -123,10 +123,9 @@ object MashMaster {
             activeDataSubscription?.unsubscribe()
             activeDataSubscription = null
         }
-        if (activeDataSubject != null) {
-            activeDataSubject?.onCompleted()
-            activeDataSubject = null
-        }
+
+        activeDataSubject?.onCompleted()
+        activeDataSubject = null
 
         var observable: Observable<MashData> =
                 if (imageReddits?.active?.size ?: 0 <= 0) {
@@ -291,13 +290,13 @@ object MashMaster {
 
     fun getImageUrlFromT3(data: t3, targetWidth: Int, targetHeight: Int): String? {
         Timber.d("getImageUrlFromT3 t3:" + data.title + " tw:" + targetWidth + " th:" + targetHeight)
-        return data?.preview?.images?.first()?.let {
+        return data.preview?.images?.first()?.let {
             var images = ArrayList<ImageInfo>()
-            it?.source?.let {
+            it.source?.let {
                 images.add(it)
             }
 
-            it?.resolutions?.let {
+            it.resolutions?.let {
                 for (image in it) {
                     images.add(image)
                 }
@@ -325,7 +324,7 @@ object MashMaster {
 
     fun getT1sFromListing(listing: Listing): List<t1> {
         var list = ArrayList<t1>()
-        var children = listing?.children ?: ArrayList()
+        var children = listing.children ?: ArrayList()
         for (child in children) {
             if (child.data is t1) {
                 list.add(child.data as t1)
@@ -338,7 +337,7 @@ object MashMaster {
 
     fun getT3sFromListing(listing: Listing): List<t3> {
         var list = ArrayList<t3>()
-        var children = listing?.children ?: ArrayList()
+        var children = listing.children ?: ArrayList()
         for (child in children) {
             if (child.data is t3) {
                 list.add(child.data as t3)
