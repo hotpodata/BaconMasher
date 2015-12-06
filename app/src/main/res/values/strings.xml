@@ -61,7 +61,7 @@
     <string name="filecat_desc">Browse files in a colorful way!</string>
     <string name="wikicat">WikiCat</string>
     <string name="wikicat_desc">Browse Wiki Encyclopedia in a colorful way!</string>
-    <string name="version_template">V%1$s by Hot PoData</string>
+    <string name="version_template">V%1$s by HotPoData LLC</string>
 
     <string name="this_app">This App</string>
     <string name="rate_us">Rate this app</string>

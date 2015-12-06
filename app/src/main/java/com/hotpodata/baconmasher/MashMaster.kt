@@ -3,8 +3,6 @@ package com.hotpodata.baconmasher
 import android.content.Context
 import android.graphics.Point
 import android.text.Html
-import android.text.Spanned
-import android.text.TextUtils
 import android.util.Patterns
 import android.view.WindowManager
 import com.hotpodata.baconforkotlin.RedditSessionService
@@ -205,14 +203,18 @@ object MashMaster {
                                     }
                                 }
                     }
-                    .switchIfEmpty(if (attemptNum < maxAttempts) getImageUrlFromSub(attemptNum + 1, maxAttempts, targetWidth, targetHeight) else Observable.error<String>(ExceptionNoImageInPost("Fail")))
-                    .doOnNext { Timber.d("getImageUrlFromSub attempt#" + attemptNum + " url:" + it) }
+                    .switchIfEmpty(
+                            Observable.just(attemptNum < maxAttempts).flatMap {
+                                if (it) getImageUrlFromSub(attemptNum + 1, maxAttempts, targetWidth, targetHeight) else Observable.error<String>(ExceptionNoImageInPost("Fail"))
+                            }
+                    )
+                    .doOnNext { Timber.d("getImageUrlFromSub attempt#" + attemptNum + " of max#" + maxAttempts + " url:" + it) }
         }
     }
 
     fun getCommentFromSub(attemptNum: Int, maxAttempts: Int): Observable<String> {
         var subreddit = imageReddits?.getRandomActive()
-        Timber.d("getImageUrlFromSub:" + subreddit + " attemptNum:" + attemptNum + " maxAttempts:" + maxAttempts)
+        Timber.d("getCommentFromSub:" + subreddit + " attemptNum:" + attemptNum + " maxAttempts:" + maxAttempts)
         if (subreddit == null) {
             return Observable.error(ExceptionMissingSettings("No active image subreddits"))
         } else {
@@ -221,7 +223,6 @@ object MashMaster {
                         it.getRandomSubredditPost(subreddit, UUID.randomUUID().toString())
                                 .flatMap {
                                     Timber.d("inFlatMap")
-
                                     //Load up all the t1s
                                     var t1s = ArrayList<t1>()
                                     for (item in it) {
@@ -277,10 +278,13 @@ object MashMaster {
                                     } else {
                                         Observable.empty()
                                     }
-
                                 }
                     }
-                    .switchIfEmpty(if (attemptNum < maxAttempts) getCommentFromSub(attemptNum + 1, maxAttempts) else Observable.error(ExceptionNoCommentsInPost("Fail")))
+                    .switchIfEmpty(
+                            Observable.just(attemptNum < maxAttempts).flatMap {
+                                if (it) getCommentFromSub(attemptNum + 1, maxAttempts) else Observable.error<String>(ExceptionNoImageInPost("Fail"))
+                            }
+                    )
                     .doOnNext { Timber.d("getCommentFromSub attempt#" + attemptNum + " comment:" + it) }
         }
     }

@@ -18,6 +18,6 @@ object UserAgentUtils {
             Timber.e(e, "Version fail")
         }
         //"android:com.hotpodata.baconmasher.free:v1.0.0 (by /u/hotpodata)"
-        return "android:" + ctx.packageName + ":v" + version + " (by /u/" + redditUserName + ")";
+        return "android:" + ctx.packageName + ":" + version + " (by /u/" + redditUserName + ")";
     }
 }
