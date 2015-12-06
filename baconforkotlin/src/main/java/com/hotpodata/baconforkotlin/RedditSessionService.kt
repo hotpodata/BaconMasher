@@ -10,6 +10,8 @@ import rx.Observable
 import rx.lang.kotlin.BehaviourSubject
 import timber.log.Timber
 import java.net.URLDecoder
+import java.net.URLEncoder
+import java.util.*
 
 /**
  * Created by jdrotos on 12/4/15.
@@ -62,6 +64,39 @@ class RedditSessionService(val userAgent: String, val uniqueDeviceId: String, va
         var gson = GsonHelper.gson
         var client = OkHttpClient()
 
+        //Sanatize headers - sometimes reddit redirect headers contained a full url in
+        //the "location" header. This url would sometimes contain special characters. e.g. umlouts
+        //which would cause okhttp to throw an exception. No More!
+        client.networkInterceptors().add(object : Interceptor {
+            override fun intercept(chain: Interceptor.Chain?): Response? {
+                var req = chain?.request()
+                return chain?.proceed(req)?.let {
+                    var location = it.header("location")?.let {
+                        //https://www.reddit.com/r/HumanPorn/comments/3uvkjo/portrait_maasai_mother_and_son_tanzania_1024_x/.json
+                        if (it.endsWith(".json")) {
+                            var parts = ArrayList(it.split("/"))
+                            var origArticleName = parts[parts.size - 2]
+                            var encodedArticleName = URLEncoder.encode(origArticleName, "UTF-8")
+                            if(origArticleName != encodedArticleName) {
+                                var fixed = it.replace(origArticleName, encodedArticleName)
+                                Timber.d("location header fix - orig:" + it + " fixed:" + fixed)
+                                fixed
+                            }else{
+                                null
+                            }
+                        } else {
+                            null
+                        }
+                    }
+                    if (location != null) {
+                        it.newBuilder().header("location", location).build()
+                    } else {
+                        it
+                    }
+                }
+            }
+        })
+
         //Add the user agent
         client.interceptors().add(object : Interceptor {
             override fun intercept(chain: Interceptor.Chain?): Response? {
@@ -84,26 +119,6 @@ class RedditSessionService(val userAgent: String, val uniqueDeviceId: String, va
             }
         })
 
-        //Sanatize headers - sometimes reddit redirect headers contained a full url in
-        //the "location" header. This url would sometimes contain special characters. e.g. umlouts
-        //which would cause okhttp to throw an exception. No More!
-        client.networkInterceptors().add(object : Interceptor {
-            override fun intercept(chain: Interceptor.Chain?): Response? {
-                var req = chain?.request()
-                return chain?.proceed(req)?.let {
-                    var location = it.header("location")?.let {
-                        var loc = URLDecoder.decode(it, "UTF-8")
-                        Timber.d("location header fix - oig:" + it + " new:" + loc)
-                        loc
-                    }
-                    if (location != null) {
-                        it.newBuilder().header("location", location).build()
-                    } else {
-                        it
-                    }
-                }
-            }
-        })
 
         var logger = HttpLoggingInterceptor({
             Timber.d(it)
