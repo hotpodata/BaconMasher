@@ -106,6 +106,4 @@ class TextAlignmentSelector : LinearLayout {
         iv.setBackgroundColor(if (isSelected) selectedBgColor else deselectedBgColor)
         iv.setColorFilter(if (isSelected) selectedIconColor else deslectedIconColor, PorterDuff.Mode.SRC_ATOP)
     }
-
-
 }

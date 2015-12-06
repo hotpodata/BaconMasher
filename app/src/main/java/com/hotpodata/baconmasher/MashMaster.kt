@@ -13,7 +13,6 @@ import com.hotpodata.baconforkotlin.network.model.Listing
 import com.hotpodata.baconforkotlin.network.model.t1
 import com.hotpodata.baconforkotlin.network.model.t3
 import com.hotpodata.baconmasher.data.*
-import com.hotpodata.baconmasher.utils.ImgurUtils
 import com.hotpodata.baconmasher.utils.UserAgentUtils
 import rx.Observable
 import rx.Subscription
@@ -38,7 +37,6 @@ object MashMaster {
     val PREF_UNIQUE_ID = "UNIQUE_ID"
 
     //Regex
-    val IMG_RGX_RAW = "(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*\\.(?:jpg|png))$".toRegex()
     val COM_RGX_DELETED = "^(\\[deleted\\]|\\[DELETED\\]|\\[removed\\]|\\[REMOVED\\])$".toRegex()
     val COM_RGX_LINK = Patterns.WEB_URL.toRegex()
     val COM_RGX_EMBEDDEDLINK = "\\[(.*?)\\]\\((.*?)\\)".toRegex()
@@ -61,7 +59,6 @@ object MashMaster {
         get() {
             var ctx = context
             if (_service == null && ctx != null) {
-                //TODO: GENERATE USER-AGENT STRING
                 _service = RedditSessionService(UserAgentUtils.genUserAgentStr(ctx, ctx.getString(R.string.reddit_user_name)), getUniqueId(), ctx.getString(R.string.reddit_app_id) ?: "")
             }
             return _service!!

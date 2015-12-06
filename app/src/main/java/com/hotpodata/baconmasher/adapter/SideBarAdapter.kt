@@ -251,14 +251,54 @@ class SideBarAdapter(ctx: Context) : RecyclerView.Adapter<RecyclerView.ViewHolde
 
         sideBarRows.add(SideBarAdapter.Div(false))
         sideBarRows.add(mContext.resources.getString(R.string.acknowledgements))
+        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.autofittextview), mContext.resources.getString(R.string.autofittextview_license), View.OnClickListener {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setData(Uri.parse(mContext.resources.getString(R.string.autofittextview_url)))
+            mContext.startActivity(i)
+        }))
+        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.gson), mContext.resources.getString(R.string.gson_license), View.OnClickListener {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setData(Uri.parse(mContext.resources.getString(R.string.gson_url)))
+            mContext.startActivity(i)
+        }))
+        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.kotson), mContext.resources.getString(R.string.kotson_license), View.OnClickListener {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setData(Uri.parse(mContext.resources.getString(R.string.kotson_url)))
+            mContext.startActivity(i)
+        }))
+        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.okhttp), mContext.resources.getString(R.string.okhttp_license), View.OnClickListener {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setData(Uri.parse(mContext.resources.getString(R.string.okhttp_url)))
+            mContext.startActivity(i)
+        }))
+        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.picasso), mContext.resources.getString(R.string.picasso_license), View.OnClickListener {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setData(Uri.parse(mContext.resources.getString(R.string.picasso_url)))
+            mContext.startActivity(i)
+        }))
+        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.retrofit), mContext.resources.getString(R.string.retrofit_license), View.OnClickListener {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setData(Uri.parse(mContext.resources.getString(R.string.retrofit_url)))
+            mContext.startActivity(i)
+        }))
+        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.rxandroid), mContext.resources.getString(R.string.rxandroid_license), View.OnClickListener {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setData(Uri.parse(mContext.resources.getString(R.string.rxandroid_url)))
+            mContext.startActivity(i)
+        }))
+        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.rxjava), mContext.resources.getString(R.string.rxjava_license), View.OnClickListener {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setData(Uri.parse(mContext.resources.getString(R.string.rxjava_url)))
+            mContext.startActivity(i)
+        }))
+        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.rxkotlin), mContext.resources.getString(R.string.rxkotlin_license), View.OnClickListener {
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setData(Uri.parse(mContext.resources.getString(R.string.rxkotlin_url)))
+            mContext.startActivity(i)
+        }))
         sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.timber), mContext.resources.getString(R.string.timber_license), View.OnClickListener {
             val i = Intent(Intent.ACTION_VIEW)
             i.setData(Uri.parse(mContext.resources.getString(R.string.timber_url)))
-            mContext.startActivity(i)
-        }))
-        sideBarRows.add(SideBarAdapter.SettingsRow(mContext.resources.getString(R.string.joda), mContext.resources.getString(R.string.joda_license), View.OnClickListener {
-            val i = Intent(Intent.ACTION_VIEW)
-            i.setData(Uri.parse(mContext.resources.getString(R.string.joda_url)))
             mContext.startActivity(i)
         }))
 

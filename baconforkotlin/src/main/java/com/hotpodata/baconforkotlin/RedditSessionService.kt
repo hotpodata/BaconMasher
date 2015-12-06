@@ -7,9 +7,7 @@ import com.squareup.okhttp.OkHttpClient
 import com.squareup.okhttp.Response
 import com.squareup.okhttp.logging.HttpLoggingInterceptor
 import rx.Observable
-import rx.lang.kotlin.BehaviourSubject
 import timber.log.Timber
-import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.*
 
@@ -33,6 +31,7 @@ class RedditSessionService(val userAgent: String, val uniqueDeviceId: String, va
         return Observable
                 .just(genService(AuthEndpoint, dressApplicationIdForAuthHeader(applicationId)))
                 .flatMap {
+                    //Note: This url is the ARGUMENT not an endpoint
                     it.accessToken("https://oauth.reddit.com/grants/installed_client", uniqueDeviceId)
                 }
                 .map {
@@ -72,7 +71,6 @@ class RedditSessionService(val userAgent: String, val uniqueDeviceId: String, va
                 var req = chain?.request()
                 return chain?.proceed(req)?.let {
                     var location = it.header("location")?.let {
-                        //https://www.reddit.com/r/HumanPorn/comments/3uvkjo/portrait_maasai_mother_and_son_tanzania_1024_x/.json
                         if (it.endsWith(".json")) {
                             var parts = ArrayList(it.split("/"))
                             var origArticleName = parts[parts.size - 2]

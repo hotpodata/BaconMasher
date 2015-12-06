@@ -73,14 +73,48 @@
     <string name="legal_blurb">This software application is provided as is. Its creator(s) take no responsibility for consequences of its installation or use.</string>
 
     <string name="acknowledgements">Acknowledgements</string>
+
+    <string name="autofittextview">AutoFitTextView</string>
+    <string name="autofittextview_license">@string/license_apache</string>
+    <string name="autofittextview_url">https://github.com/grantland/android-autofittextview</string>
+
+    <string name="gson">gson</string>
+    <string name="gson_license">@string/license_apache</string>
+    <string name="gson_url">https://github.com/google/gson</string>
+
+    <string name="kotson">Joda-Time</string>
+    <string name="kotson_license">@string/license_mit</string>
+    <string name="kotson_url">https://github.com/SalomonBrys/Kotson</string>
+
+    <string name="okhttp">OkHttp</string>
+    <string name="okhttp_license">@string/license_apache</string>
+    <string name="okhttp_url">http://square.github.io/okhttp/</string>
+
+    <string name="picasso">Picasso</string>
+    <string name="picasso_license">@string/license_apache</string>
+    <string name="picasso_url">http://square.github.io/picasso/</string>
+
+    <string name="retrofit">Retrofit</string>
+    <string name="retrofit_license">@string/license_apache</string>
+    <string name="retrofit_url">http://square.github.io/retrofit/</string>
+
+    <string name="rxandroid">RxAndroid</string>
+    <string name="rxandroid_license">@string/license_apache</string>
+    <string name="rxandroid_url">https://github.com/ReactiveX/RxAndroid</string>
+
+    <string name="rxjava">RxJava</string>
+    <string name="rxjava_license">@string/license_apache</string>
+    <string name="rxjava_url">https://github.com/ReactiveX/RxJava</string>
+
+    <string name="rxkotlin">RxKotlin</string>
+    <string name="rxkotlin_license">@string/license_apache</string>
+    <string name="rxkotlin_url">https://github.com/ReactiveX/RxKotlin</string>
+
     <string name="timber">Timber</string>
     <string name="timber_license">@string/license_apache</string>
     <string name="timber_url">https://github.com/JakeWharton/timber</string>
 
-    <string name="joda">Joda-Time</string>
-    <string name="joda_license">@string/license_apache</string>
-    <string name="joda_url">http://www.joda.org/joda-time/</string>
-
     <string name="license_apache">Apache 2.0</string>
+    <string name="license_mit">MIT</string>
 
 </resources>

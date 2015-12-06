@@ -9,7 +9,6 @@ import timber.log.Timber
  */
 class BaconMasherApplication : MultiDexApplication() {
 
-
     public override fun onCreate(){
         super.onCreate()
         if(BuildConfig.LOGGING_ENABLED) {
@@ -17,7 +16,4 @@ class BaconMasherApplication : MultiDexApplication() {
         }
         MashMaster.initMashMaster(this)
     }
-
-
-
 }

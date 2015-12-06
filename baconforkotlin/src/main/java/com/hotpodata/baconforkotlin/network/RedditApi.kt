@@ -12,6 +12,11 @@ interface RedditApi {
     @GET("/r/{subreddit}/hot/.json")
     fun getSubReddit(@Path("subreddit") subreddit: String, @Query("after") after: String?): Observable<Thing>
 
+    /**
+     * The cachedistraction argument is to thwart the cache when making multiple calls to /random.
+     * This app depends on things actually being random, so though I'm sure some ops guy is mad about it,
+     * being able to throw random junk is necessary. (and yes I tried using header settings to avoid the cache)
+     */
     @GET("/r/{subreddit}/random/.json")
     fun getRandomSubredditPost(@Path("subreddit") subreddit: String, @Query("cachedistraction") depth: String?): Observable<MutableList<Thing>>
 
@@ -23,6 +28,5 @@ interface RedditApi {
 
     @FormUrlEncoded
     @POST("/api/v1/access_token")
-    fun accessToken(@Field("grant_type") grantType: String,  @Field("device_id") deviceId: String) : Observable<AccessTokenResponse>
-    //fun accessToken(@Header("Authorization") authorization: String, @Field("grant_type") grantType: String, @Field("redirect_uri") redirectUri: String, @Field("device_id") deviceId: String) : Observable<AccessTokenResponse>
+    fun accessToken(@Field("grant_type") grantType: String, @Field("device_id") deviceId: String): Observable<AccessTokenResponse>
 }

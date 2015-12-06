@@ -40,5 +40,4 @@ object GravityStringer {
             Pair(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, BC),
             Pair(Gravity.BOTTOM or Gravity.RIGHT, BR)
     )
-
 }

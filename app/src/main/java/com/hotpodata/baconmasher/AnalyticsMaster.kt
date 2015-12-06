@@ -12,7 +12,6 @@ object AnalyticsMaster {
 
     //SCREENS
     val SCREEN_MASHER = "Masher"
-    val SCREEN_PRO_FEATURES = "ProFeature"
 
     //CATEGORIES
     val CATEGORY_ACTION = "Action"
@@ -41,7 +40,6 @@ object AnalyticsMaster {
     val ACTION_TWITTER = "Twitter"
     val ACTION_GITHUB = "GitHub"
     val ACTION_GO_PRO_SIDEBAR = "Go_Pro_Sidebar"
-    val ACTION_GO_PRO_LOADING = "Go_Pro_Fragment"
 
     //Labels (note, sometimes labels are generated in code. e.g. subreddit name)
     val LABEL_MASH_COUNT = "MashCount"
