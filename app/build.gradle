@@ -61,12 +61,14 @@ android {
             buildConfigField "boolean", "IS_PRO", "false"
             signingConfig freeSigning
             resValue "string", "app_label", "Baconmasher"
+            resValue "string", "file_provider_authorities", "com.hotpodata.baconmasher.free.fileprovider"
         }
         Pro {
             applicationId "com.hotpodata.baconmasher.pro"
             buildConfigField "boolean", "IS_PRO", "true"
             signingConfig proSigning
             resValue "string", "app_label", "Baconmasher Pro"
+            resValue "string", "file_provider_authorities", "com.hotpodata.baconmasher.pro.fileprovider"
         }
     }
     sourceSets {

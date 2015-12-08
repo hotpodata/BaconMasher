@@ -719,7 +719,7 @@ public class MasherActivity : AppCompatActivity() {
             var sharedImageFile = File(shareableImageDir, "sharedmash.png")
             outputStream = FileOutputStream(sharedImageFile)
             bmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-            var contentUri = FileProvider.getUriForFile(this, "com.hotpodata.baconmasher.fileprovider", sharedImageFile)
+            var contentUri = FileProvider.getUriForFile(this, getString(R.string.file_provider_authorities), sharedImageFile)
             return contentUri
         } catch(ex: Exception) {
             Timber.e(ex, "Fail in saveFileToSharePath")
