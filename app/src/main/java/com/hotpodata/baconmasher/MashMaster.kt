@@ -212,10 +212,10 @@ object MashMaster {
     }
 
     fun getCommentFromSub(attemptNum: Int, maxAttempts: Int): Observable<String> {
-        var subreddit = imageReddits?.getRandomActive()
+        var subreddit = commentReddits?.getRandomActive()
         Timber.d("getCommentFromSub:" + subreddit + " attemptNum:" + attemptNum + " maxAttempts:" + maxAttempts)
         if (subreddit == null) {
-            return Observable.error(ExceptionMissingSettings("No active image subreddits"))
+            return Observable.error(ExceptionMissingSettings("No active comment subreddits"))
         } else {
             return service.getAuthenticatedService()
                     .flatMap {
@@ -281,7 +281,7 @@ object MashMaster {
                     }
                     .switchIfEmpty(
                             Observable.just(attemptNum < maxAttempts).flatMap {
-                                if (it) getCommentFromSub(attemptNum + 1, maxAttempts) else Observable.error<String>(ExceptionNoImageInPost("Fail"))
+                                if (it) getCommentFromSub(attemptNum + 1, maxAttempts) else Observable.error<String>(ExceptionNoCommentsInPost("Fail"))
                             }
                     )
                     .doOnNext { Timber.d("getCommentFromSub attempt#" + attemptNum + " comment:" + it) }
