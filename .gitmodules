@@ -1,0 +1,3 @@
+[submodule "baconforkotlin"]
+	path = baconforkotlin
+	url = git@github.com:hotpodata/baconforkotlin.git
